@@ -1,0 +1,44 @@
+﻿<Window x:Class="Market.Presentation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="600" Width="900">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="*"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80"></ColumnDefinition>
+                <ColumnDefinition Width="100"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="0">Stock</Label>
+            <Label Grid.Row="1" Grid.Column="0">Start Date</Label>
+            <Label Grid.Row="2" Grid.Column="0">End Date</Label>
+            <ComboBox Name="StockComboBox" Grid.Row="0" Grid.Column="1" Margin="0,3" SelectionChanged="StockComboBox_OnSelectionChanged"/>
+            <ComboBox Name="StartDateComboBox" Grid.Row="1" Grid.Column="1" Margin="0,3" SelectionChanged="StartDateComboBox_OnSelectionChanged"/>
+            <ComboBox Name="EndDateComboBox" Grid.Row="2" Grid.Column="1" Margin="0,3"/>
+            <Button Name ="SearchButton" Grid.Row="3" Grid.Column="1" Margin="0,3" Click="SearchButton_OnClick">Search</Button>
+            <Label Grid.Row="4" Grid.Column="0">Total Trans</Label>
+            <Label Grid.Row="5" Grid.Column="0">Low</Label>
+            <Label Grid.Row="6" Grid.Column="0">High</Label>
+            <Label Name="TotalTransactionLabel" Grid.Row="4" Grid.Column="1"></Label>
+            <Label Name="LowLabel" Grid.Row="5" Grid.Column="1"></Label>
+            <Label Name="HighLabel" Grid.Row="6" Grid.Column="1"></Label>
+        </Grid>
+        <Canvas Name="ChartCanvas" Grid.Row="0" Grid.Column="1" Margin="3">
+            <Line Name="DateLine" X1="20" X2="660" Y1="530" Y2="530" StrokeThickness="1" Stroke="Black"></Line>
+            <Line Name="PriceLine" X1="30" X2="30" Y1="0" Y2="540" StrokeThickness="1" Stroke="Black"></Line>
+        </Canvas>
+    </Grid>
+</Window>

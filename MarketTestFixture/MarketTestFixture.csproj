@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{A8112FA8-49A3-49DE-8E35-84E591AA5965}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Market.TestFixture</RootNamespace>
+    <AssemblyName>Market.TestFixture</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Analyzer\CandleStickPatterns\BearishAbandonedBabyTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishCounterAttackTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishEngulfingTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishHaramiCrossTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BeltHoldLinesTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishAbandonedBabyTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishCounterAttackTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishEngulfingTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishHaramiCrossTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\DarkCloudCoverTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\DojiDragonFlyTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\DojiGraveStoneTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\HammerTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\HangingManTestFixture.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\MarubozuTestFixture.cs" />
+    <Compile Include="Analyzer\MovingAverageAnalyzerTestFixture.cs" />
+    <Compile Include="Analyzer\SimpleMovingAverageCalculatorTestFixture.cs" />
+    <Compile Include="CodeTestFixture.cs" />
+    <Compile Include="Data\SampleDataReader.cs" />
+    <Compile Include="DbContextTestFixtureBase.cs" />
+    <Compile Include="IntegrationTest.cs" />
+    <Compile Include="ListExtensionTestFixture.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StockContextTestFixture.cs" />
+    <Compile Include="Suggestions\LongTermBuyAfterLongTermPrepareSuggestionAnalyzerTestFixture.cs" />
+    <Compile Include="Suggestions\ShortTermSecondBottomTouchAfterLongDownSuggestionAnalyzerTestFixture.cs" />
+    <Compile Include="Tasks\StockTaskTestFixture.cs" />
+    <Compile Include="Web\YahooFinanceTransactionWebRequestTestFixture.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Market\Market.csproj">
+      <Project>{46240BAC-AA00-40EE-8C9A-1C282DD8CCF1}</Project>
+      <Name>Market</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <EmbeddedResource Include="Data\EodData.csv" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\YahooFinanceData.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\Mfc.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\YahooFinanceDividend.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\AverageSampleData.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Analyzer\Channels\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

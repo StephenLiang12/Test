@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{46240BAC-AA00-40EE-8C9A-1C282DD8CCF1}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Market</RootNamespace>
+    <AssemblyName>Market</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.0.2\lib\net40\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Action.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishAbandonedBaby.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishHaramiCross.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishAbandonedBaby.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BeltHoldLines.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishCounterAttack.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishEngulfing.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishCounterAttack.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\CandleStickConstant.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\DarkCloudCover.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\DojiDragonFly.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\DojiGraveStone.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BearishEngulfing.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\HangingMan.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\BullishHaramiCross.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\Marubozu .cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\EveningStar.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\MorningStar.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\Pattern.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\Hammer.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\Piercing.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\ReversePattern.cs" />
+    <Compile Include="Analyzer\CandleStickPatterns\UnknownPattern.cs" />
+    <Compile Include="Analyzer\Channels\Channel.cs" />
+    <Compile Include="Analyzer\Channels\ChannelExtension.cs" />
+    <Compile Include="Analyzer\Channels\TrendChannelAnalyzer.cs" />
+    <Compile Include="Analyzer\MovingAverage.cs" />
+    <Compile Include="Analyzer\MovingAverageAnalyzer.cs" />
+    <Compile Include="Analyzer\MovingAverageConvergenceDivergenceAnalyzer.cs" />
+    <Compile Include="Analyzer\MovingAverageConvergenceDivergenceResult.cs" />
+    <Compile Include="Analyzer\MovingAverageExtension.cs" />
+    <Compile Include="Analyzer\CandleStickPatternAnalyzer.cs" />
+    <Compile Include="Analyzer\SimpleMovingAverageCalculator.cs" />
+    <Compile Include="Analyzer\Trend.cs" />
+    <Compile Include="BaseContext.cs" />
+    <Compile Include="Exceptions\NoSymolFoundException.cs" />
+    <Compile Include="ListExtension.cs" />
+    <Compile Include="Model\ChannelDataMapping.cs" />
+    <Compile Include="Model\SplitMapping.cs" />
+    <Compile Include="Model\StockMapping.cs" />
+    <Compile Include="Model\SuggestionMapping.cs" />
+    <Compile Include="Model\TransactionDataMapping.cs" />
+    <Compile Include="Model\TransactionSimulatorDataMapping.cs" />
+    <Compile Include="Period.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Split.cs" />
+    <Compile Include="Stock.cs" />
+    <Compile Include="StockContext.cs" />
+    <Compile Include="Suggestion.cs" />
+    <Compile Include="Suggestions\ISuggestionAnalyzer.cs" />
+    <Compile Include="Suggestions\LongTermBuyAfterLongTermPrepareSuggestionAnalyzer.cs" />
+    <Compile Include="Suggestions\ShortTermBuyForLongTermVibrationAnalyzer.cs" />
+    <Compile Include="Suggestions\ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer.cs" />
+    <Compile Include="TransactionSimulator.cs" />
+    <Compile Include="Tasks\IStockTask.cs" />
+    <Compile Include="Tasks\StockTask.cs" />
+    <Compile Include="TransactionData.cs" />
+    <Compile Include="TransactionDataExtension.cs" />
+    <Compile Include="Web\Factory\ITransactionWebRequestFactory.cs" />
+    <Compile Include="Web\TransactionWebRequest.cs" />
+    <Compile Include="Web\YahooFinanceTransactionWebRequest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Data\EodData.xlsx" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="SQL\AlterTable.sql" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
