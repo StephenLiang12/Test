@@ -73,16 +73,8 @@ namespace Market.Analyzer.Channels
 
         public Channel BuildResistanceLine(Channel channel, IList<TransactionData> orderedTransactions)
         {
-            double highPrice = double.MinValue;
-            int highIndex = 0;
-            for (int i = 0; i < orderedTransactions.Count; i++)
-            {
-                if (highPrice < orderedTransactions[i].High)
-                {
-                    highPrice = orderedTransactions[i].High;
-                    highIndex = i;
-                }
-            }
+            int highIndex;
+            var highPrice = GetHighPrice(orderedTransactions, out highIndex);
             var bestChannel = channel;
             for (int i = 0; i < orderedTransactions.Count; i++)
             {
@@ -105,18 +97,25 @@ namespace Market.Analyzer.Channels
             return bestChannel;
         }
 
-        public Channel BuildSupportLine(Channel channel, IList<TransactionData> orderedTransactions)
+        private static double GetHighPrice(IList<TransactionData> orderedTransactions, out int highIndex)
         {
-            double lowPrice = double.MaxValue;
-            int lowIndex = 0;
+            double highPrice = double.MinValue;
+            highIndex = 0;
             for (int i = 0; i < orderedTransactions.Count; i++)
             {
-                if (lowPrice > orderedTransactions[i].Low)
+                if (highPrice < orderedTransactions[i].High)
                 {
-                    lowPrice = orderedTransactions[i].Low;
-                    lowIndex = i;
+                    highPrice = orderedTransactions[i].High;
+                    highIndex = i;
                 }
             }
+            return highPrice;
+        }
+
+        public Channel BuildSupportLine(Channel channel, IList<TransactionData> orderedTransactions)
+        {
+            int lowIndex;
+            var lowPrice = GetLowPrice(orderedTransactions, out lowIndex);
             var bestChannel = channel;
             for (int i = 0; i < orderedTransactions.Count; i++)
             {
@@ -139,11 +138,28 @@ namespace Market.Analyzer.Channels
             return bestChannel;
         }
 
+        private static double GetLowPrice(IList<TransactionData> orderedTransactions, out int lowIndex)
+        {
+            double lowPrice = double.MaxValue;
+            lowIndex = 0;
+            for (int i = 0; i < orderedTransactions.Count; i++)
+            {
+                if (lowPrice > orderedTransactions[i].Low)
+                {
+                    lowPrice = orderedTransactions[i].Low;
+                    lowIndex = i;
+                }
+            }
+            return lowPrice;
+        }
+
         public Channel DeduceResistanceLine(Channel channel, IList<TransactionData> orderedTransactions)
         {
             var bestChannel = channel;
-            bestChannel.ResistanceChannelRatio = channel.SupportChannelRatio;
-            bestChannel.ResistanceStartPrice = orderedTransactions[0].High;
+            bestChannel.ResistanceChannelRatio = bestChannel.SupportChannelRatio;
+            int highIndex = 0;
+            double highPrice = GetHighPrice(orderedTransactions, out highIndex);
+            bestChannel.ResistanceStartPrice = CalculatePriceAt(0, bestChannel.ResistanceChannelRatio, highPrice, highIndex);
             for (int i = 1; i < orderedTransactions.Count; i++)
             {
                 var newChannel = new Channel();
@@ -165,7 +181,9 @@ namespace Market.Analyzer.Channels
         {
             var bestChannel = channel;
             bestChannel.SupportChannelRatio = channel.ResistanceChannelRatio;
-            bestChannel.SupportStartPrice = orderedTransactions[0].Low;
+            int lowIndex = 0;
+            double lowPrice = GetLowPrice(orderedTransactions, out lowIndex);
+            bestChannel.SupportStartPrice = CalculatePriceAt(0, bestChannel.SupportChannelRatio, lowPrice, lowIndex);
             for (int i = 1; i < orderedTransactions.Count; i++)
             {
                 var newChannel = new Channel();

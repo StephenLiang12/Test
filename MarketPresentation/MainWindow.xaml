@@ -16,6 +16,11 @@
                 <RowDefinition Height="30"></RowDefinition>
                 <RowDefinition Height="30"></RowDefinition>
                 <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
                 <RowDefinition Height="*"></RowDefinition>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -32,9 +37,14 @@
             <Label Grid.Row="4" Grid.Column="0">Total Trans</Label>
             <Label Grid.Row="5" Grid.Column="0">Low</Label>
             <Label Grid.Row="6" Grid.Column="0">High</Label>
+            <Label Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2">Display Trending Channel</Label>
             <Label Name="TotalTransactionLabel" Grid.Row="4" Grid.Column="1"></Label>
             <Label Name="LowLabel" Grid.Row="5" Grid.Column="1"></Label>
             <Label Name="HighLabel" Grid.Row="6" Grid.Column="1"></Label>
+            <CheckBox Name="Days100TrendingCheckBox" Content="100 Days" Grid.Row="8" Grid.Column="1" Margin="0,5" Checked="Days100TrendingCheckBox_OnChecked" Unchecked="Days100TrendingCheckBox_OnUnchecked"></CheckBox>
+            <CheckBox Name="Days50TrendingCheckBox" Content="50 Days" Grid.Row="9" Grid.Column="1" Margin="0,5"></CheckBox>
+            <CheckBox Name="Days20TrendingCheckBox" Content="20 Days" Grid.Row="10" Grid.Column="1" Margin="0,5"></CheckBox>
+            <CheckBox Name="Days10TrendingCheckBox" Content="10 Days" Grid.Row="11" Grid.Column="1" Margin="0,5"></CheckBox>
         </Grid>
         <Canvas Name="ChartCanvas" Grid.Row="0" Grid.Column="1" Margin="3">
             <Line Name="DateLine" X1="20" X2="660" Y1="530" Y2="530" StrokeThickness="1" Stroke="Black"></Line>

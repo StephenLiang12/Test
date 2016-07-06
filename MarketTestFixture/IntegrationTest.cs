@@ -858,17 +858,17 @@ namespace Market.TestFixture
                 if (stock.Key != 200)
                     continue;
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key && t.TimeStamp >= new DateTime(2015, 12, 20)).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 try
                 {
                     var partialList = orderedList.GetFrontPartial(100);
-                    //for (int i = 100; i < orderedList.Count; i++)
+                    for (int i = 100; i < orderedList.Count; i++)
                     {
                         var channel = analyzer.AnalyzeTrendChannel(partialList);
                         context.Channels.Add(channel);
                         context.SaveChanges();
-                        //partialList.RemoveAt(0);
-                        //partialList.Add(orderedList[i]);
+                        partialList.RemoveAt(0);
+                        partialList.Add(orderedList[i]);
                     }
 
                 }

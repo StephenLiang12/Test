@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Market.Analyzer.Channels;
 
 namespace Market.Presentation
 {
@@ -23,6 +24,11 @@ namespace Market.Presentation
         private const int TransactionLinePixel = 10;
 
         private IList<UIElement> drawingElements = new List<UIElement>();
+        private IList<UIElement> days100DrawingElements = new List<UIElement>();
+        private Dictionary<DateTime, double> xPixelDictionary = new Dictionary<DateTime, double>();
+        private double startPrice;
+        private double priceIncrementPerLabel;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -71,6 +77,7 @@ namespace Market.Presentation
                 ChartCanvas.Children.Remove(drawingElement);
             }
             drawingElements.Clear();
+            xPixelDictionary.Clear();
             if (StockComboBox.SelectedValue == null)
                 return;
 
@@ -95,9 +102,9 @@ namespace Market.Presentation
             LowLabel.Content = minPrice;
             HighLabel.Content = maxPrice;
             var diff = maxPrice - minPrice;
-            var priceIncriment = GetPriceIncrementPerLabel(diff);
-            var startPrice = GetStartPriceLabel(minPrice, priceIncriment);
-            AddPriceLabel(startPrice, priceIncriment);
+            priceIncrementPerLabel = GetPriceIncrementPerLabel(diff);
+            startPrice = GetStartPriceLabel(minPrice, priceIncrementPerLabel);
+            AddPriceLabel(startPrice, priceIncrementPerLabel);
             var transactionIntervalPixel = TransactionLinePixel;
             if (transactionsPerLine == 1)
             {
@@ -109,39 +116,43 @@ namespace Market.Presentation
             while (i < orderedTransactionList.Count)
             {
                 var x = (j + 1) * XLabelPixel + k * transactionIntervalPixel + X0Pixel;
+                xPixelDictionary.Add(orderedTransactionList[i].TimeStamp, x);
                 var open = orderedTransactionList[i].Open;
-                var close = orderedTransactionList[i + transactionsPerLine - 1].Close;
+                var endIndex = i + transactionsPerLine - 1;
+                if (endIndex >= orderedTransactionList.Count)
+                    endIndex = orderedTransactionList.Count - 1;
+                var close = orderedTransactionList[endIndex].Close;
                 var high = orderedTransactionList[i].High;
                 var low = orderedTransactionList[i].Low;
-                for (int n = 0; n < transactionsPerLine; n++)
+                for (int n = i + 1; n <= endIndex; n++)
                 {
-                    if (orderedTransactionList[i + n].High > high)
-                        high = orderedTransactionList[i + n].High;
-                    if (orderedTransactionList[i + n].Low < low)
-                        low = orderedTransactionList[i + n].Low;
+                    if (orderedTransactionList[n].High > high)
+                        high = orderedTransactionList[n].High;
+                    if (orderedTransactionList[n].Low < low)
+                        low = orderedTransactionList[n].Low;
                 }
                 Line line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Black);
                 line.X1 = x;
                 line.X2 = x;
-                line.Y1 = GetYForPrice(startPrice, priceIncriment, high);
-                line.Y2 = GetYForPrice(startPrice, priceIncriment, low);
+                line.Y1 = GetYForPrice(startPrice, priceIncrementPerLabel, high);
+                line.Y2 = GetYForPrice(startPrice, priceIncrementPerLabel, low);
                 ChartCanvas.Children.Add(line);
                 drawingElements.Add(line);
                 line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Black);
                 line.X1 = x - 3;
                 line.X2 = x;
-                line.Y1 = GetYForPrice(startPrice, priceIncriment, open);
-                line.Y2 = GetYForPrice(startPrice, priceIncriment, open);
+                line.Y1 = GetYForPrice(startPrice, priceIncrementPerLabel, open);
+                line.Y2 = GetYForPrice(startPrice, priceIncrementPerLabel, open);
                 ChartCanvas.Children.Add(line);
                 drawingElements.Add(line);
                 line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Black);
                 line.X1 = x;
                 line.X2 = x + 3;
-                line.Y1 = GetYForPrice(startPrice, priceIncriment, close);
-                line.Y2 = GetYForPrice(startPrice, priceIncriment, close);
+                line.Y1 = GetYForPrice(startPrice, priceIncrementPerLabel, close);
+                line.Y2 = GetYForPrice(startPrice, priceIncrementPerLabel, close);
                 ChartCanvas.Children.Add(line);
                 drawingElements.Add(line);
                 i += transactionsPerLine;
@@ -292,6 +303,91 @@ namespace Market.Presentation
         {
             var priceIncrementPerPixel = priceIncrementPerLabel/YLabelPixel;
             return DateLine.Y1 - (price - startPrice)/priceIncrementPerPixel - YLabelPixel;
+        }
+
+        private double GetXForDateTime(DateTime timeStamp)
+        {
+            double previousX = 0;
+            foreach (var pair in xPixelDictionary)
+            {
+                if (pair.Key == timeStamp)
+                    return pair.Value;
+                if (pair.Key > timeStamp)
+                    return previousX;
+                previousX = pair.Value;
+            }
+            return previousX;
+        }
+
+        private void Days100TrendingCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (StockComboBox.SelectedValue == null)
+                return;
+
+            if (StartDateComboBox.SelectedValue == null)
+                return;
+            var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
+            var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
+            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
+                endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
+            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate))
+            {
+                DrawChannelSupportLine(channel);
+                DrawChannelResistanceLine(channel);
+            }
+            
+        }
+
+        private void DrawChannelSupportLine(Channel channel)
+        {
+            var x1 = GetXForDateTime(channel.StartDate);
+            var y1 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice);
+            var x2 = GetXForDateTime(channel.EndDate);
+            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice + 100*channel.SupportChannelRatio);
+            Line line = new Line();
+            if (channel.ChannelTrend > 0)
+                line.Stroke = new SolidColorBrush(Colors.Green);
+            else if (channel.ChannelTrend == 0)
+                line.Stroke = new SolidColorBrush(Colors.Blue);
+            else
+                line.Stroke = new SolidColorBrush(Colors.Firebrick);
+            line.X1 = x1;
+            line.X2 = x2;
+            line.Y1 = y1;
+            line.Y2 = y2;
+            ChartCanvas.Children.Add(line);
+            days100DrawingElements.Add(line);
+        }
+
+        private void DrawChannelResistanceLine(Channel channel)
+        {
+            var x1 = GetXForDateTime(channel.StartDate);
+            var y1 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice);
+            var x2 = GetXForDateTime(channel.EndDate);
+            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice + 100*channel.ResistanceChannelRatio);
+            Line line = new Line();
+            if (channel.ChannelTrend > 0)
+                line.Stroke = new SolidColorBrush(Colors.Orange);
+            else if (channel.ChannelTrend == 0)
+                line.Stroke = new SolidColorBrush(Colors.Purple);
+            else
+                line.Stroke = new SolidColorBrush(Colors.Red);
+            line.X1 = x1;
+            line.X2 = x2;
+            line.Y1 = y1;
+            line.Y2 = y2;
+            ChartCanvas.Children.Add(line);
+            days100DrawingElements.Add(line);
+        }
+
+        private void Days100TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (var drawingElement in days100DrawingElements)
+            {
+                ChartCanvas.Children.Remove(drawingElement);
+            }
+            days100DrawingElements.Clear();
         }
     }
 }
