@@ -16,6 +16,7 @@ namespace Market
         public string AnalyzerName { get; set; }
         public Action SuggestedAction { get; set; }
         public Term SuggestedTerm { get; set; }
+        public double? SuggestedPrice { get; set; }
         public string CandleStickPattern { get; set; }
         public double Macd { get; set; }
         public Trend Avg5Trend { get; set; }

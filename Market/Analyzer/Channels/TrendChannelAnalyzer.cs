@@ -159,8 +159,8 @@ namespace Market.Analyzer.Channels
             bestChannel.ResistanceChannelRatio = bestChannel.SupportChannelRatio;
             int highIndex = 0;
             double highPrice = GetHighPrice(orderedTransactions, out highIndex);
-            bestChannel.ResistanceStartPrice = CalculatePriceAt(0, bestChannel.ResistanceChannelRatio, highPrice, highIndex);
-            for (int i = 1; i < orderedTransactions.Count; i++)
+            bestChannel.ResistanceStartPrice = highPrice;
+            for (int i = 0; i < orderedTransactions.Count; i++)
             {
                 var newChannel = new Channel();
                 var resistanceStartPrice = CalculatePriceAt(0, bestChannel.ResistanceChannelRatio, orderedTransactions[i].High, i);
@@ -183,8 +183,8 @@ namespace Market.Analyzer.Channels
             bestChannel.SupportChannelRatio = channel.ResistanceChannelRatio;
             int lowIndex = 0;
             double lowPrice = GetLowPrice(orderedTransactions, out lowIndex);
-            bestChannel.SupportStartPrice = CalculatePriceAt(0, bestChannel.SupportChannelRatio, lowPrice, lowIndex);
-            for (int i = 1; i < orderedTransactions.Count; i++)
+            bestChannel.SupportStartPrice = lowPrice;
+            for (int i = 0; i < orderedTransactions.Count; i++)
             {
                 var newChannel = new Channel();
                 var supportStartPrice = CalculatePriceAt(0, bestChannel.SupportChannelRatio, orderedTransactions[i].Low, i);

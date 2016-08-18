@@ -17,7 +17,7 @@ namespace Market.Presentation
         private readonly StockContext stockContext = new StockContext();
         private const int X0Pixel = 30;
         private const int Y0Pixel = 30;
-        private const int XLengPixel = 500;
+        private const int XLengPixel = 900;
         private const int YLengPixel = 500;
         private const int XLabelPixel = 50;
         private const int YLabelPixel = 50;
@@ -25,6 +25,8 @@ namespace Market.Presentation
 
         private IList<UIElement> drawingElements = new List<UIElement>();
         private IList<UIElement> days100DrawingElements = new List<UIElement>();
+        private IList<UIElement> days50DrawingElements = new List<UIElement>();
+        private IList<UIElement> days20DrawingElements = new List<UIElement>();
         private Dictionary<DateTime, double> xPixelDictionary = new Dictionary<DateTime, double>();
         private double startPrice;
         private double priceIncrementPerLabel;
@@ -106,10 +108,13 @@ namespace Market.Presentation
             startPrice = GetStartPriceLabel(minPrice, priceIncrementPerLabel);
             AddPriceLabel(startPrice, priceIncrementPerLabel);
             var transactionIntervalPixel = TransactionLinePixel;
+            var transactionPerDateTimeLabel = XLabelPixel/TransactionLinePixel;
             if (transactionsPerLine == 1)
             {
                 transactionIntervalPixel = XLabelPixel / dateTimeLabelIncrement;
+                transactionPerDateTimeLabel = dateTimeLabelIncrement;
             }
+
             int i = 0;
             int j = 0;
             int k = 0;
@@ -157,7 +162,7 @@ namespace Market.Presentation
                 drawingElements.Add(line);
                 i += transactionsPerLine;
                 k++;
-                if (k == 5)
+                if (k == transactionPerDateTimeLabel)
                 {
                     k = 0;
                     j++;
@@ -183,10 +188,10 @@ namespace Market.Presentation
                 ChartCanvas.Children.Add(textBox);
                 drawingElements.Add(textBox);
                 Line line = new Line();
-                line.Stroke = new SolidColorBrush(Colors.Black);
+                line.Stroke = new SolidColorBrush(Colors.Aquamarine);
                 line.X1 = x;
                 line.X2 = x;
-                line.Y1 = DateLine.Y1 - 3;
+                line.Y1 = DateLine.Y1 - 500;
                 line.Y2 = DateLine.Y1 + 3;
                 ChartCanvas.Children.Add(line);
                 drawingElements.Add(line);
@@ -209,7 +214,7 @@ namespace Market.Presentation
                 int maxDateTimeCount = XLengPixel/XLabelPixel;
                 return count/maxDateTimeCount + 1;
             }
-            return transactionPerLine*5;
+            return transactionPerLine * XLabelPixel/TransactionLinePixel;
         }
 
         private void AddPriceLabel(double startPrice, double priceIncrementPerLabel)
@@ -331,25 +336,25 @@ namespace Market.Presentation
             var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
             if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
                 endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
-            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate))
+            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 100))
             {
-                DrawChannelSupportLine(channel);
-                DrawChannelResistanceLine(channel);
+                DrawChannelSupportLine(channel, days100DrawingElements);
+                DrawChannelResistanceLine(channel, days100DrawingElements);
             }
             
         }
 
-        private void DrawChannelSupportLine(Channel channel)
+        private void DrawChannelSupportLine(Channel channel, IList<UIElement> drawingElements)
         {
             var x1 = GetXForDateTime(channel.StartDate);
             var y1 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice);
             var x2 = GetXForDateTime(channel.EndDate);
-            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice + 100*channel.SupportChannelRatio);
+            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice + channel.Length*channel.SupportChannelRatio);
             Line line = new Line();
-            if (channel.ChannelTrend > 0)
-                line.Stroke = new SolidColorBrush(Colors.Green);
-            else if (channel.ChannelTrend == 0)
+            if (channel.ChannelTrend == 0)
                 line.Stroke = new SolidColorBrush(Colors.Blue);
+            else if (channel.SupportChannelRatio > 0)
+                line.Stroke = new SolidColorBrush(Colors.Green);
             else
                 line.Stroke = new SolidColorBrush(Colors.Firebrick);
             line.X1 = x1;
@@ -357,20 +362,20 @@ namespace Market.Presentation
             line.Y1 = y1;
             line.Y2 = y2;
             ChartCanvas.Children.Add(line);
-            days100DrawingElements.Add(line);
+            drawingElements.Add(line);
         }
 
-        private void DrawChannelResistanceLine(Channel channel)
+        private void DrawChannelResistanceLine(Channel channel, IList<UIElement> drawingElements)
         {
             var x1 = GetXForDateTime(channel.StartDate);
             var y1 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice);
             var x2 = GetXForDateTime(channel.EndDate);
-            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice + 100*channel.ResistanceChannelRatio);
+            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice + channel.Length*channel.ResistanceChannelRatio);
             Line line = new Line();
-            if (channel.ChannelTrend > 0)
-                line.Stroke = new SolidColorBrush(Colors.Orange);
-            else if (channel.ChannelTrend == 0)
+            if (channel.ChannelTrend == 0)
                 line.Stroke = new SolidColorBrush(Colors.Purple);
+            else if (channel.ResistanceChannelRatio > 0)
+                line.Stroke = new SolidColorBrush(Colors.Orange);
             else
                 line.Stroke = new SolidColorBrush(Colors.Red);
             line.X1 = x1;
@@ -378,7 +383,7 @@ namespace Market.Presentation
             line.Y1 = y1;
             line.Y2 = y2;
             ChartCanvas.Children.Add(line);
-            days100DrawingElements.Add(line);
+            drawingElements.Add(line);
         }
 
         private void Days100TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
@@ -388,6 +393,62 @@ namespace Market.Presentation
                 ChartCanvas.Children.Remove(drawingElement);
             }
             days100DrawingElements.Clear();
+        }
+
+        private void Days50TrendingCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (StockComboBox.SelectedValue == null)
+                return;
+
+            if (StartDateComboBox.SelectedValue == null)
+                return;
+            var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
+            var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
+            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
+                endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
+            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 50))
+            {
+                DrawChannelSupportLine(channel, days50DrawingElements);
+                DrawChannelResistanceLine(channel, days50DrawingElements);
+            }
+        }
+
+        private void Days50TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (var drawingElement in days50DrawingElements)
+            {
+                ChartCanvas.Children.Remove(drawingElement);
+            }
+            days50DrawingElements.Clear();
+        }
+
+        private void Days20TrendingCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (StockComboBox.SelectedValue == null)
+                return;
+
+            if (StartDateComboBox.SelectedValue == null)
+                return;
+            var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
+            var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
+            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
+                endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
+            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 20))
+            {
+                DrawChannelSupportLine(channel, days20DrawingElements);
+                DrawChannelResistanceLine(channel, days20DrawingElements);
+            }
+        }
+
+        private void Days20TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (var drawingElement in days20DrawingElements)
+            {
+                ChartCanvas.Children.Remove(drawingElement);
+            }
+            days20DrawingElements.Clear();
         }
     }
 }

@@ -7,6 +7,7 @@ namespace Market.Suggestions
         string Name { get; }
         Term Term { get; }
         Action Action { get; }
+        double Price { get; }
         double CalculateForecaseCertainty(IList<TransactionData> orderedTransactions);
     }
 }

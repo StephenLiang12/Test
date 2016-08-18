@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Market.Presentation.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="600" Width="900">
+        Title="MainWindow" Height="600" Width="1200">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="180"></ColumnDefinition>
@@ -42,12 +42,11 @@
             <Label Name="LowLabel" Grid.Row="5" Grid.Column="1"></Label>
             <Label Name="HighLabel" Grid.Row="6" Grid.Column="1"></Label>
             <CheckBox Name="Days100TrendingCheckBox" Content="100 Days" Grid.Row="8" Grid.Column="1" Margin="0,5" Checked="Days100TrendingCheckBox_OnChecked" Unchecked="Days100TrendingCheckBox_OnUnchecked"></CheckBox>
-            <CheckBox Name="Days50TrendingCheckBox" Content="50 Days" Grid.Row="9" Grid.Column="1" Margin="0,5"></CheckBox>
-            <CheckBox Name="Days20TrendingCheckBox" Content="20 Days" Grid.Row="10" Grid.Column="1" Margin="0,5"></CheckBox>
-            <CheckBox Name="Days10TrendingCheckBox" Content="10 Days" Grid.Row="11" Grid.Column="1" Margin="0,5"></CheckBox>
+            <CheckBox Name="Days50TrendingCheckBox" Content="50 Days" Grid.Row="9" Grid.Column="1" Margin="0,5" Checked="Days50TrendingCheckBox_OnChecked" Unchecked="Days50TrendingCheckBox_OnUnchecked"></CheckBox>
+            <CheckBox Name="Days20TrendingCheckBox" Content="20 Days" Grid.Row="10" Grid.Column="1" Margin="0,5" Checked="Days20TrendingCheckBox_OnChecked" Unchecked="Days20TrendingCheckBox_OnUnchecked"></CheckBox>
         </Grid>
         <Canvas Name="ChartCanvas" Grid.Row="0" Grid.Column="1" Margin="3">
-            <Line Name="DateLine" X1="20" X2="660" Y1="530" Y2="530" StrokeThickness="1" Stroke="Black"></Line>
+            <Line Name="DateLine" X1="20" X2="960" Y1="530" Y2="530" StrokeThickness="1" Stroke="Black"></Line>
             <Line Name="PriceLine" X1="30" X2="30" Y1="0" Y2="540" StrokeThickness="1" Stroke="Black"></Line>
         </Canvas>
     </Grid>

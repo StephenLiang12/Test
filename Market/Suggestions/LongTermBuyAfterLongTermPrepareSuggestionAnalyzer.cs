@@ -10,6 +10,7 @@ namespace Market.Suggestions
         public string Name { get { return "LongTermBuyAfterLongTermPrepare"; } }
         public Term Term { get { return Term.Long; } }
         public Action Action { get { return Action.Buy; } }
+        public double Price { get; private set; }
 
         public LongTermBuyAfterLongTermPrepareSuggestionAnalyzer()
         {

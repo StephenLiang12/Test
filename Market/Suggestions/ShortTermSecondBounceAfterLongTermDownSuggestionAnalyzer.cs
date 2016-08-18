@@ -10,6 +10,7 @@ namespace Market.Suggestions
         public string Name { get { return "Second Bounce After Long Term Down"; } }
         public Term Term { get { return Term.Short; } }
         public Action Action { get { return Action.Buy; } }
+        public double Price { get; private set; }
 
         public ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer()
         {

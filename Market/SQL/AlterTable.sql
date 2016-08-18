@@ -117,13 +117,21 @@ if not exists (select * from sysobjects where name = 'Suggestion' and xtype = 'u
 		Accuracy	float not null
 	)
 
---Add Analyzer Name Colume on Suggestion table
+--Add Analyzer Name Column on Suggestion table
 if (not exists (select c.name from sysobjects o
 				inner join syscolumns c on o.id = c.id
 				where o.name = 'Suggestion'
 					and o.xtype = 'u'
 					and c.name = 'AnalyzerName'))
 	alter table Suggestion add AnalyzerName nvarchar(200)
+
+--Add Suggested Price Column on Suggestion table
+if (not exists (select c.name from sysobjects o
+				inner join syscolumns c on o.id = c.id
+				where o.name = 'Suggestion'
+					and o.xtype = 'u'
+					and c.name = 'SuggestedPrice'))
+	alter table Suggestion add SuggestedPrice float null
 
 --Create TransactionSimulator table
 if not exists (select * from sysobjects where name = 'TransactionSimulator' and xtype = 'u')

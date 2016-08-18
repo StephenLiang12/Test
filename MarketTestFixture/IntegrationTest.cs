@@ -861,8 +861,9 @@ namespace Market.TestFixture
                     context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 try
                 {
-                    var partialList = orderedList.GetFrontPartial(100);
-                    for (int i = 100; i < orderedList.Count; i++)
+                    var length = 50;
+                    var partialList = orderedList.GetFrontPartial(length);
+                    for (int i = length; i < orderedList.Count; i++)
                     {
                         var channel = analyzer.AnalyzeTrendChannel(partialList);
                         context.Channels.Add(channel);
@@ -875,6 +876,111 @@ namespace Market.TestFixture
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void AbleToGenerateSuggestionByTrendChannelAnalyzer()
+        {
+            StockContext context = new StockContext();
+            MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
+            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
+            CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
+            TrendChannelSuggestionAnalyzer suggestionAnalyzer = new TrendChannelSuggestionAnalyzer();
+            Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
+            foreach (var stock in context.Stocks.ToList())
+            {
+                if (stock.Key != 200)
+                    continue;
+                IList<TransactionData> orderedList =
+                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                MovingAverage avg5 = new MovingAverage();
+                avg5.NumberOfTransactions = 5;
+                avg5.Averages = new double[orderedList.Count];
+                MovingAverage avg10 = new MovingAverage();
+                avg10.NumberOfTransactions = 10;
+                avg10.Averages = new double[orderedList.Count];
+                MovingAverage avg20 = new MovingAverage();
+                avg20.NumberOfTransactions = 20;
+                avg20.Averages = new double[orderedList.Count];
+                MovingAverage avg50 = new MovingAverage();
+                avg50.NumberOfTransactions = 50;
+                avg50.Averages = new double[orderedList.Count];
+                MovingAverage avg100 = new MovingAverage();
+                avg100.NumberOfTransactions = 100;
+                avg100.Averages = new double[orderedList.Count];
+                MovingAverage avg200 = new MovingAverage();
+                avg200.NumberOfTransactions = 200;
+                avg200.Averages = new double[orderedList.Count];
+                for (int i = 0; i < orderedList.Count; i++)
+                {
+                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
+                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
+                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
+                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
+                    avg100.Averages[i] = orderedList[i].SimpleAvg100;
+                    avg200.Averages[i] = orderedList[i].SimpleAvg200;
+                }
+                int j = 200;
+                while (j < orderedList.Count)
+                {
+                    try
+                    {
+                        var partialList = orderedList.GetFrontPartial(j);
+                        var partialAvg5 = avg5.GetPartial(j);
+                        var partialAvg10 = avg10.GetPartial(j);
+                        var partialAvg20 = avg20.GetPartial(j);
+                        var partialAvg50 = avg50.GetPartial(j);
+                        var partialAvg200 = avg200.GetPartial(j);
+                        var partialMovingTrend5 = analyzer.AnalyzeMovingTrend(partialAvg5);
+                        var partialPattern = candleStickPatternAnalyzer.GetPattern(partialList, partialMovingTrend5);
+                        double priceMovingAvg5 = analyzer.PriceCompareAverage(partialList, partialAvg5);
+                        double priceMovingAvg20 = analyzer.PriceCompareAverage(partialList, partialAvg20);
+                        double priceMovingAvg200 = analyzer.PriceCompareAverage(partialList, partialAvg200);
+                        double movingAvg5_20 = analyzer.AverageCrossOver(partialAvg5, partialAvg20);
+                        double movingAvg50_200 = analyzer.AverageCrossOver(partialAvg50, partialAvg200);
+                        var movingTrend10 = analyzer.AnalyzeMovingTrend(partialAvg10);
+                        var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
+                        var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
+                        var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
+                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
+                            partialAvg10,
+                            partialAvg20, 8);
+                        Suggestion suggestion = new Suggestion();
+
+                        suggestion.TimeStamp = partialList[j - 1].TimeStamp;
+                        suggestion.StockKey = stock.Key;
+                        suggestion.StockId = stock.Id;
+                        suggestion.StockName = stock.Name;
+                        suggestion.ClosePrice = partialList[j - 1].Close;
+                        suggestion.Volume = partialList[j - 1].Volume;
+                        suggestion.CandleStickPattern = partialPattern.Name;
+                        suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
+                        suggestion.Avg5Trend = partialMovingTrend5;
+                        suggestion.Avg20Trend = movingTrend20;
+                        suggestion.Avg200Trend = movingTrend200;
+                        suggestion.PriceVsAvg5 = priceMovingAvg5;
+                        suggestion.PriceVsAvg200 = priceMovingAvg200;
+                        suggestion.Avg5VsAvg20 = movingAvg5_20;
+                        suggestion.Avg50VsAvg200 = movingAvg50_200;
+
+
+                        var forecaseCertainty = suggestionAnalyzer.CalculateForecaseCertainty(partialList);
+                        if (forecaseCertainty > 0)
+                        {
+                            suggestion.AnalyzerName = suggestionAnalyzer.Name;
+                            suggestion.SuggestedAction = suggestionAnalyzer.Action;
+                            suggestion.SuggestedTerm = suggestionAnalyzer.Term;
+                            suggestion.SuggestedPrice = suggestionAnalyzer.Price;
+                            context.Suggestions.Add(suggestion);
+                            context.SaveChanges();
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+                    j++;
                 }
             }
         }
