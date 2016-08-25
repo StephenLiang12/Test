@@ -20,7 +20,7 @@ namespace Market.Suggestions
                 return 1;
             }
             //Down to 20 support line - short buy
-            if (orderedTransactions[count - 1].Low <= shortPrice.Item1 && orderedTransactions[count - 1].Low > interPrice.Item1 && orderedTransactions[count - 1].Low > longPrice.Item1)
+            if (orderedTransactions[count - 1].Low <= shortPrice.Item1 && orderedTransactions[count - 1].Low > interPrice.Item1 && orderedTransactions[count - 1].Low > longPrice.Item1 && IsItNewSupportLine(orderedTransactions, shortChannel) == false)
             {
                 Term = Term.Short;
                 Action = Action.Buy;
@@ -28,7 +28,7 @@ namespace Market.Suggestions
                 return 1;
             }
             //Down to 50 support line - intermediate buy
-            if (orderedTransactions[count - 1].Low <= interPrice.Item1 && orderedTransactions[count - 1].Low > longPrice.Item1)
+            if (orderedTransactions[count - 1].Low <= interPrice.Item1 && orderedTransactions[count - 1].Low > longPrice.Item1 && IsItNewSupportLine(orderedTransactions, interChannel) == false)
             {
                 Term = Term.Intermediate;
                 Action = Action.Buy;
@@ -36,7 +36,7 @@ namespace Market.Suggestions
                 return 1;
             }
             //Down to 100 support line - long buy
-            if (orderedTransactions[count - 1].Low <= longPrice.Item1)
+            if (orderedTransactions[count - 1].Low <= longPrice.Item1 && IsItNewSupportLine(orderedTransactions, longChannel) == false)
             {
                 Term = Term.Long;
                 Action = Action.Buy;

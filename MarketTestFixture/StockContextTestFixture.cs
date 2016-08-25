@@ -98,7 +98,7 @@ namespace Market.TestFixture
             TransactionSimulator transactionSimulator = new TransactionSimulator();
             transactionSimulator.StockKey = stock.Key;
             transactionSimulator.SuggestionKey = suggestion.Key;
-            transactionSimulator.BuyDate = DateTime.Today;
+            transactionSimulator.TimeStamp = DateTime.Today;
             context.TransactionSimulators.Add(transactionSimulator);
             context.SaveChanges();
             Assert.IsTrue(transactionSimulator.Key > 0);

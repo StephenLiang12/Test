@@ -12,7 +12,7 @@ namespace Market.Suggestions
         {
             int count = orderedTransactions.Count;
             //Down to 50 support line - short buy
-            if (orderedTransactions[count - 1].Low <= interPrice.Item1 && orderedTransactions[count - 1].Low > longPrice.Item1)
+            if (orderedTransactions[count - 1].Low <= interPrice.Item1 && orderedTransactions[count - 1].Low > longPrice.Item1 && IsItNewSupportLine(orderedTransactions, interChannel) == false)
             {
                 Term = Term.Short;
                 Action = Action.Buy;

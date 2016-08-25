@@ -666,92 +666,92 @@ namespace Market.TestFixture
             return accurate;
         }
 
-        [TestMethod]
-        public void SimulateTransactions()
-        {
-            StockContext context = new StockContext();
-            foreach (var stock in context.Stocks)
-            {
-                if (context.Suggestions.Any(s => s.StockKey == stock.Key))
-                {
-                    SortedList<DateTime, TransactionData> trasactionSortedList = new SortedList<DateTime, TransactionData>();
-                    foreach (var transaction in context.TransactionDatas.Where(t => t.StockKey == stock.Key))
-                    {
-                        trasactionSortedList.Add(transaction.TimeStamp, transaction);
-                    }
-                    Dictionary<string, SortedList<DateTime, Suggestion>> suggestionSortedDic = new Dictionary<string, SortedList<DateTime, Suggestion>>();
-                    foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stock.Key))
-                    {
-                        if (suggestionSortedDic.ContainsKey(suggestion.AnalyzerName) == false)
-                            suggestionSortedDic[suggestion.AnalyzerName] = new SortedList<DateTime, Suggestion>();
-                        suggestionSortedDic[suggestion.AnalyzerName].Add(suggestion.TimeStamp, suggestion);
-                    }
-                    foreach (var pair in suggestionSortedDic)
-                    {
-                        Dictionary<long, TransactionSimulator> simulcationDic = context.TransactionSimulators.Where(t => t.StockKey == stock.Key).ToDictionary(t => t.SuggestionKey);
-                        TransactionSimulator existingTransactionSimulator = null;
-                        foreach (var suggestion in pair.Value.Values)
-                        {
-                            if (existingTransactionSimulator == null && simulcationDic.ContainsKey(suggestion.Key))
-                                existingTransactionSimulator = simulcationDic[suggestion.Key];
-                            if (existingTransactionSimulator == null || (existingTransactionSimulator.SellDate.HasValue && existingTransactionSimulator.SellDate <= suggestion.TimeStamp))
-                            {
-                                int index = trasactionSortedList.IndexOfKey(suggestion.TimeStamp);
-                                if (index < trasactionSortedList.Count - 1)
-                                {
-                                    var nextDayTransaction = trasactionSortedList.Values[index + 1];
-                                    var newTransactionSimulator = new TransactionSimulator();
-                                    newTransactionSimulator.StockKey = stock.Key;
-                                    newTransactionSimulator.SuggestionKey = suggestion.Key;
-                                    newTransactionSimulator.BuyDate = nextDayTransaction.TimeStamp;
-                                    newTransactionSimulator.BuyPrice = (nextDayTransaction.Low +
-                                                                        nextDayTransaction.High)/2;
-                                    newTransactionSimulator.Volume =
-                                        Convert.ToInt32(50000/newTransactionSimulator.BuyPrice);
-                                    context.TransactionSimulators.Add(newTransactionSimulator);
-                                    existingTransactionSimulator = newTransactionSimulator;
-                                }
-                                else
-                                    break;
-                            }
+        //[TestMethod]
+        //public void SimulateTransactions()
+        //{
+        //    StockContext context = new StockContext();
+        //    foreach (var stock in context.Stocks)
+        //    {
+        //        if (context.Suggestions.Any(s => s.StockKey == stock.Key))
+        //        {
+        //            SortedList<DateTime, TransactionData> trasactionSortedList = new SortedList<DateTime, TransactionData>();
+        //            foreach (var transaction in context.TransactionDatas.Where(t => t.StockKey == stock.Key))
+        //            {
+        //                trasactionSortedList.Add(transaction.TimeStamp, transaction);
+        //            }
+        //            Dictionary<string, SortedList<DateTime, Suggestion>> suggestionSortedDic = new Dictionary<string, SortedList<DateTime, Suggestion>>();
+        //            foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stock.Key))
+        //            {
+        //                if (suggestionSortedDic.ContainsKey(suggestion.AnalyzerName) == false)
+        //                    suggestionSortedDic[suggestion.AnalyzerName] = new SortedList<DateTime, Suggestion>();
+        //                suggestionSortedDic[suggestion.AnalyzerName].Add(suggestion.TimeStamp, suggestion);
+        //            }
+        //            foreach (var pair in suggestionSortedDic)
+        //            {
+        //                Dictionary<long, TransactionSimulator> simulcationDic = context.TransactionSimulators.Where(t => t.StockKey == stock.Key).ToDictionary(t => t.SuggestionKey);
+        //                TransactionSimulator existingTransactionSimulator = null;
+        //                foreach (var suggestion in pair.Value.Values)
+        //                {
+        //                    if (existingTransactionSimulator == null && simulcationDic.ContainsKey(suggestion.Key))
+        //                        existingTransactionSimulator = simulcationDic[suggestion.Key];
+        //                    if (existingTransactionSimulator == null || (existingTransactionSimulator.SellDate.HasValue && existingTransactionSimulator.SellDate <= suggestion.TimeStamp))
+        //                    {
+        //                        int index = trasactionSortedList.IndexOfKey(suggestion.TimeStamp);
+        //                        if (index < trasactionSortedList.Count - 1)
+        //                        {
+        //                            var nextDayTransaction = trasactionSortedList.Values[index + 1];
+        //                            var newTransactionSimulator = new TransactionSimulator();
+        //                            newTransactionSimulator.StockKey = stock.Key;
+        //                            newTransactionSimulator.SuggestionKey = suggestion.Key;
+        //                            newTransactionSimulator.BuyDate = nextDayTransaction.TimeStamp;
+        //                            newTransactionSimulator.BuyPrice = (nextDayTransaction.Low +
+        //                                                                nextDayTransaction.High)/2;
+        //                            newTransactionSimulator.Volume =
+        //                                Convert.ToInt32(50000/newTransactionSimulator.BuyPrice);
+        //                            context.TransactionSimulators.Add(newTransactionSimulator);
+        //                            existingTransactionSimulator = newTransactionSimulator;
+        //                        }
+        //                        else
+        //                            break;
+        //                    }
 
-                            if (existingTransactionSimulator.SellDate.HasValue == false)
-                            {
-                                double price = existingTransactionSimulator.BuyPrice;
-                                int startIndex = trasactionSortedList.IndexOfKey(existingTransactionSimulator.BuyDate);
-                                for (int i = startIndex; i < trasactionSortedList.Count; i++)
-                                {
-                                    TransactionData transactionData = trasactionSortedList.Values[i];
-                                    if (transactionData.Close > price)
-                                        price = transactionData.Close;
-                                    else
-                                    {
-                                        double drop = (price - transactionData.Close)/price;
-                                        double dropLevel = 0.02;
-                                        if (suggestion.SuggestedTerm == Term.Long)
-                                            dropLevel = 0.05;
-                                        if (drop > dropLevel)
-                                        {
-                                            if (i + 1 > trasactionSortedList.Count - 1)
-                                                break;
-                                            existingTransactionSimulator.SellDate =
-                                                trasactionSortedList.Values[i + 1].TimeStamp;
-                                            existingTransactionSimulator.SellPrice =
-                                                (trasactionSortedList.Values[i + 1].Low +
-                                                 trasactionSortedList.Values[i + 1].High)/2;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (existingTransactionSimulator.SellDate.HasValue == false)
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
-            context.SaveChanges();
-        }
+        //                    if (existingTransactionSimulator.SellDate.HasValue == false)
+        //                    {
+        //                        double price = existingTransactionSimulator.BuyPrice;
+        //                        int startIndex = trasactionSortedList.IndexOfKey(existingTransactionSimulator.BuyDate);
+        //                        for (int i = startIndex; i < trasactionSortedList.Count; i++)
+        //                        {
+        //                            TransactionData transactionData = trasactionSortedList.Values[i];
+        //                            if (transactionData.Close > price)
+        //                                price = transactionData.Close;
+        //                            else
+        //                            {
+        //                                double drop = (price - transactionData.Close)/price;
+        //                                double dropLevel = 0.02;
+        //                                if (suggestion.SuggestedTerm == Term.Long)
+        //                                    dropLevel = 0.05;
+        //                                if (drop > dropLevel)
+        //                                {
+        //                                    if (i + 1 > trasactionSortedList.Count - 1)
+        //                                        break;
+        //                                    existingTransactionSimulator.SellDate =
+        //                                        trasactionSortedList.Values[i + 1].TimeStamp;
+        //                                    existingTransactionSimulator.SellPrice =
+        //                                        (trasactionSortedList.Values[i + 1].Low +
+        //                                         trasactionSortedList.Values[i + 1].High)/2;
+        //                                    break;
+        //                                }
+        //                            }
+        //                        }
+        //                        if (existingTransactionSimulator.SellDate.HasValue == false)
+        //                            break;
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    context.SaveChanges();
+        //}
 
         [TestMethod]
         public void GetLatestSuggestions()
@@ -861,7 +861,7 @@ namespace Market.TestFixture
                     context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 try
                 {
-                    var length = 50;
+                    var length = 20;
                     var partialList = orderedList.GetFrontPartial(length);
                     for (int i = length; i < orderedList.Count; i++)
                     {
@@ -977,13 +977,161 @@ namespace Market.TestFixture
                             context.SaveChanges();
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
                     }
                     j++;
                 }
             }
         }
 
+        [TestMethod]
+        public void VerifySuggestion()
+        {
+            StockContext context = new StockContext();
+            SortedList<DateTime, Suggestion> suggestionSortedList = new SortedList<DateTime, Suggestion>();
+            int stockKey = 200;
+            double expectedAmmount = 10000;
+            foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey))
+            {
+                suggestionSortedList.Add(suggestion.TimeStamp, suggestion);
+            }
+            var transactionSimulators = new List<TransactionSimulator>();
+            Dictionary<Term, int> availableVolume = new Dictionary<Term, int>(3);
+            availableVolume.Add(Term.Short, 0);
+            availableVolume.Add(Term.Intermediate, 0);
+            availableVolume.Add(Term.Long, 0);
+            foreach (var pair in suggestionSortedList)
+            {
+                if (pair.Value.SuggestedAction == Action.Buy)
+                {
+                    var timeStamp = pair.Key;
+                    if (context.TransactionDatas.Any(t => t.StockKey == stockKey && t.TimeStamp >= timeStamp))
+                    {
+                        while (context.TransactionDatas.Any(t => t.StockKey == stockKey && t.TimeStamp == timeStamp) == false)
+                        {
+                            timeStamp = timeStamp.AddDays(1);
+                        }
+                        var transaction = context.TransactionDatas.First(t => t.StockKey == stockKey && t.TimeStamp == timeStamp);
+                        var transactionSimulator = new TransactionSimulator();
+                        transactionSimulator.StockKey = stockKey;
+                        transactionSimulator.SuggestionKey = pair.Value.Key;
+                        transactionSimulator.Action = pair.Value.SuggestedAction;
+                        transactionSimulator.TimeStamp = timeStamp;
+                        if (transaction.Low > pair.Value.SuggestedPrice)
+                            transactionSimulator.Price = transaction.Close;
+                        else if (transaction.High < pair.Value.SuggestedPrice)
+                            transactionSimulator.Price = transaction.Open;
+                        else
+                            transactionSimulator.Price = pair.Value.SuggestedPrice.Value;
+                        transactionSimulator.Volume = Convert.ToInt32(expectedAmmount/transactionSimulator.Price);
+                        availableVolume[pair.Value.SuggestedTerm] += transactionSimulator.Volume;
+                        transactionSimulators.Add(transactionSimulator);
+                    }
+                }
+                else if (pair.Value.SuggestedAction == Action.Sell)
+                {
+                    if (availableVolume.Sum(a => a.Value) == 0)
+                        continue;
+
+                    var timeStamp = pair.Key;
+                    if (context.TransactionDatas.Any(t => t.StockKey == stockKey && t.TimeStamp >= timeStamp))
+                    {
+                        while (context.TransactionDatas.Any(t => t.StockKey == stockKey && t.TimeStamp == timeStamp) == false)
+                        {
+                            timeStamp = timeStamp.AddDays(1);
+                        }
+                        var transaction = context.TransactionDatas.First(t => t.StockKey == stockKey && t.TimeStamp == timeStamp);
+                        var transactionSimulator = new TransactionSimulator();
+                        transactionSimulator.StockKey = stockKey;
+                        transactionSimulator.SuggestionKey = pair.Value.Key;
+                        transactionSimulator.TimeStamp = timeStamp;
+                        transactionSimulator.Action = pair.Value.SuggestedAction;
+                        if (transaction.High > pair.Value.SuggestedPrice)
+                            transactionSimulator.Price = transaction.Close;
+                        else if (transaction.Low < pair.Value.SuggestedPrice)
+                            transactionSimulator.Price = transaction.Open;
+                        else
+                            transactionSimulator.Price = pair.Value.SuggestedPrice.Value;
+                        int suggestedVolume = Convert.ToInt32(expectedAmmount / transactionSimulator.Price);
+                        if (availableVolume[Term.Short] > suggestedVolume)
+                        {
+                            transactionSimulator.Volume = suggestedVolume;
+                            availableVolume[Term.Short] -= suggestedVolume;
+                        }
+                        else
+                        {
+                            suggestedVolume = (suggestedVolume - availableVolume[Term.Short]);
+                            if (pair.Value.SuggestedTerm == Term.Short)
+                                suggestedVolume = suggestedVolume/2;
+                            transactionSimulator.Volume = availableVolume[Term.Short];
+                            availableVolume[Term.Short] = 0;
+                            if (availableVolume[Term.Intermediate] > suggestedVolume)
+                            {
+                                transactionSimulator.Volume += suggestedVolume;
+                                availableVolume[Term.Intermediate] -= suggestedVolume;
+                            }
+                            else
+                            {
+                                suggestedVolume = (suggestedVolume - availableVolume[Term.Intermediate]);
+                                if (pair.Value.SuggestedTerm != Term.Long)
+                                    suggestedVolume = suggestedVolume/2;
+                                    transactionSimulator.Volume += availableVolume[Term.Intermediate];
+                                availableVolume[Term.Intermediate] = 0;
+                                if (availableVolume[Term.Long] > suggestedVolume)
+                                {
+                                    transactionSimulator.Volume += suggestedVolume;
+                                    availableVolume[Term.Long] -= suggestedVolume;
+                                }
+                                else
+                                {
+                                    transactionSimulator.Volume += availableVolume[Term.Long];
+                                    availableVolume[Term.Long] = 0;
+                                }
+                            }
+                        }
+                        transactionSimulators.Add(transactionSimulator);
+                    }
+                }
+            }
+
+            double maxInvestment = 0;
+            double cost = 0;
+            double accumulationCost = 0;
+            double _return = 0;
+            int remainVolume = 0;
+            int buy = 0, sell = 0;
+            int buyVolume = 0, sellVolume = 0;
+            Console.WriteLine("TimeStamp,price,volume,amount,remain");
+            foreach (var simulator in transactionSimulators)
+            {
+                var ammount = simulator.Price*simulator.Volume;
+                if (simulator.Action == Action.Buy)
+                {
+                    buy++;
+                    buyVolume += simulator.Volume;
+                    cost += ammount;
+                    accumulationCost += ammount;
+                    remainVolume += simulator.Volume;
+                    if (accumulationCost > maxInvestment)
+                        maxInvestment = accumulationCost;
+                    Console.WriteLine("{0},{1},{2},{3},{4}", simulator.TimeStamp, simulator.Price, simulator.Volume, -ammount, remainVolume);
+                }
+                if (simulator.Action == Action.Sell)
+                {
+                    sell++;
+                    sellVolume += simulator.Volume;
+                    _return += ammount;
+                    accumulationCost -= ammount;
+                    remainVolume -= simulator.Volume;
+                    Console.WriteLine("{0},{1},{2},{3},{4}", simulator.TimeStamp, simulator.Price, -simulator.Volume, ammount, remainVolume);
+                }
+            }
+            Console.WriteLine("Total Transactions: {0}, Buy - {1} - {3}, Sell - {2} - {4}", transactionSimulators.Count, buy,sell, buyVolume, sellVolume);
+            Console.WriteLine("Profit: {0}", _return - cost);
+            Console.WriteLine("Max Investment: {0}, Remain {1}", maxInvestment, remainVolume * transactionSimulators[transactionSimulators.Count - 1].Price);
+        }
     }
 }

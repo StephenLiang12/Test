@@ -64,6 +64,7 @@
     <Compile Include="Analyzer\CandleStickPatterns\HammerTestFixture.cs" />
     <Compile Include="Analyzer\CandleStickPatterns\HangingManTestFixture.cs" />
     <Compile Include="Analyzer\CandleStickPatterns\MarubozuTestFixture.cs" />
+    <Compile Include="Analyzer\Channels\TrendChannelAnalyzerTestFixture.cs" />
     <Compile Include="Analyzer\MovingAverageAnalyzerTestFixture.cs" />
     <Compile Include="Analyzer\SimpleMovingAverageCalculatorTestFixture.cs" />
     <Compile Include="CodeTestFixture.cs" />
@@ -103,9 +104,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Data\AverageSampleData.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Analyzer\Channels\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

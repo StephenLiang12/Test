@@ -161,3 +161,10 @@ if not exists (select * from sysobjects where name = 'Channel' and xtype = 'u')
 		Length	int not null
 	)
 
+--Add SuggestedPrice Column on Suggestion table
+if (not exists (select c.name from sysobjects o
+				inner join syscolumns c on o.id = c.id
+				where o.name = 'Suggestion'
+					and o.xtype = 'u'
+					and c.name = 'SuggestedPrice'))
+	alter table Suggestion add SuggestedPrice float

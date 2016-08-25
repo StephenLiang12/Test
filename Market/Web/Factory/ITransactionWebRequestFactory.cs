@@ -14,7 +14,7 @@ namespace Market.Web.Factory
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
             webRequest.StockId = stockId;
             webRequest.EndDate = DateTime.Today;
-            webRequest.StartDate = new DateTime(2015, 8, 26);
+            webRequest.StartDate = new DateTime(2016, 6, 13);
             webRequest.TransactionPeriod = Period.Day;
             return webRequest;
         }

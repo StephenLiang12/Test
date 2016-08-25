@@ -36,6 +36,56 @@ namespace Market.Analyzer.Channels
             channel.StockKey = orderedTransactions[0].StockKey;
             channel.StartDate = orderedTransactions[0].TimeStamp;
             channel.EndDate = orderedTransactions[orderedTransactions.Count - 1].TimeStamp;
+            if (channel.SupportChannelRatio > 0)
+            {
+                var upPercentage = channel.SupportChannelRatio/channel.SupportStartPrice;
+                if (upPercentage > 0.001)
+                {
+                    if (channel.ChannelTrend <= 0)
+                    {
+                        switch (channel.ChannelTrend)
+                        {
+                            case Trend.Bottom:
+                            case Trend.BottomDown:
+                            case Trend.Down:
+                                channel.ChannelTrend = Trend.BottomUp;
+                                break;
+                            case Trend.VibrationDown:
+                            case Trend.Vibration:
+                                channel.ChannelTrend = Trend.VibrationUp;
+                                break;
+                            case Trend.TopDown:
+                                channel.ChannelTrend = Trend.TopUp;
+                                break;
+                        }
+                    }
+                }
+            }
+            if (channel.ResistanceChannelRatio < 0)
+            {
+                var downPercentage = channel.ResistanceChannelRatio/channel.ResistanceStartPrice;
+                if (downPercentage < -0.001)
+                {
+                    if (channel.ChannelTrend >= 0)
+                    {
+                        switch (channel.ChannelTrend)
+                        {
+                            case Trend.BottomUp:
+                                channel.ChannelTrend = Trend.BottomDown;
+                                break;
+                            case Trend.VibrationUp:
+                            case Trend.Vibration:
+                                channel.ChannelTrend = Trend.VibrationDown;
+                                break;
+                            case Trend.Top:
+                            case Trend.TopUp:
+                            case Trend.Up:
+                                channel.ChannelTrend = Trend.TopDown;
+                                break;
+                        }
+                    }
+                }
+            }
             return channel;
         }
 
@@ -156,19 +206,18 @@ namespace Market.Analyzer.Channels
         public Channel DeduceResistanceLine(Channel channel, IList<TransactionData> orderedTransactions)
         {
             var bestChannel = channel;
-            bestChannel.ResistanceChannelRatio = bestChannel.SupportChannelRatio;
+            bestChannel.ResistanceChannelRatio = 0;
             int highIndex = 0;
             double highPrice = GetHighPrice(orderedTransactions, out highIndex);
-            bestChannel.ResistanceStartPrice = highPrice;
             for (int i = 0; i < orderedTransactions.Count; i++)
             {
                 var newChannel = new Channel();
-                var resistanceStartPrice = CalculatePriceAt(0, bestChannel.ResistanceChannelRatio, orderedTransactions[i].High, i);
+                var result = CalculateStartPriceAndRatio(orderedTransactions[i].High, i, highPrice, highIndex);
                 newChannel.ChannelTrend = bestChannel.ChannelTrend;
                 newChannel.Length = bestChannel.Length;
-                newChannel.ResistanceStartPrice = resistanceStartPrice;
+                newChannel.ResistanceStartPrice = result.Item1;
+                newChannel.ResistanceChannelRatio = result.Item2;
                 newChannel.SupportStartPrice = bestChannel.SupportStartPrice;
-                newChannel.ResistanceChannelRatio = bestChannel.ResistanceChannelRatio;
                 newChannel.SupportChannelRatio = bestChannel.SupportChannelRatio;
                 if (newChannel.Size() < bestChannel.Size() &&
                     newChannel.CoverPercentage(orderedTransactions) >= bestChannel.CoverPercentage(orderedTransactions))
@@ -180,22 +229,27 @@ namespace Market.Analyzer.Channels
         public Channel DeduceSupportLine(Channel channel, IList<TransactionData> orderedTransactions)
         {
             var bestChannel = channel;
-            bestChannel.SupportChannelRatio = channel.ResistanceChannelRatio;
+            bestChannel.SupportChannelRatio = 0;
             int lowIndex = 0;
             double lowPrice = GetLowPrice(orderedTransactions, out lowIndex);
-            bestChannel.SupportStartPrice = lowPrice;
             for (int i = 0; i < orderedTransactions.Count; i++)
             {
                 var newChannel = new Channel();
-                var supportStartPrice = CalculatePriceAt(0, bestChannel.SupportChannelRatio, orderedTransactions[i].Low, i);
+                var result = CalculateStartPriceAndRatio(orderedTransactions[i].Low, i, lowPrice, lowIndex);
+                newChannel.ChannelTrend = bestChannel.ChannelTrend;
+                newChannel.Length = bestChannel.Length;
+                newChannel.SupportStartPrice = result.Item1;
+                newChannel.SupportChannelRatio = result.Item2;
                 newChannel.ChannelTrend = bestChannel.ChannelTrend;
                 newChannel.Length = bestChannel.Length;
                 newChannel.ResistanceStartPrice = bestChannel.ResistanceStartPrice;
-                newChannel.SupportStartPrice = supportStartPrice;
                 newChannel.ResistanceChannelRatio = bestChannel.ResistanceChannelRatio;
-                newChannel.SupportChannelRatio = bestChannel.SupportChannelRatio;
-                if (newChannel.Size() < bestChannel.Size() &&
-                    newChannel.CoverPercentage(orderedTransactions) >= bestChannel.CoverPercentage(orderedTransactions))
+                var newSize = newChannel.Size();
+                var bestSize = bestChannel.Size();
+                var newCoverPercentage = newChannel.CoverPercentage(orderedTransactions);
+                var bestCoverPercentage = bestChannel.CoverPercentage(orderedTransactions);
+                if (newSize < bestSize &&
+                    newCoverPercentage >= bestCoverPercentage)
                     bestChannel = newChannel;
             }
             return bestChannel;

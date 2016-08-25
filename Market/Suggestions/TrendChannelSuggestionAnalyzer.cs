@@ -4,10 +4,11 @@ using Market.Analyzer.Channels;
 
 namespace Market.Suggestions
 {
+    ///Reach Support Line or reach Resistance Line
     /// Up, Up, Up  |   Up, Up, En  |   Up, Up, Dn  |   Up, En, Dn  |   Up, En, En  |   Up, En, Up  |   Up, Dn, Dn  |   Up, Dn, En  |   Up, Dn, Up  |
     /// SB          |   SB      SS  |           SS  |           SS  |           SS  |   SB          |           SS  |           SS  |               |
     /// IB          |   IB          |   SB          |   SB          |   SB          |   IB      SS  |           IS  |           IS  |   SB      SS  |
-    /// LB      SS  |   LB          |   IB          |   IB          |   IB          |   LB          |   SB          |   SB          |   IB          |
+    /// LB      SS  |   LB          |   IB          |   IB          |   IB          |   LB          |               |   SB          |   IB          |
     /// 
     /// 
     /// En, Up, Up  |   En, Up, En  |   En, Up, Dn  |   En, En, Dn  |   En, En, En  |   En, En, Up  |   En, Dn, Dn  |   En, Dn, En  |   En, Dn, Up  |
@@ -20,9 +21,26 @@ namespace Market.Suggestions
     ///             |           SS  |           SS  |           SS  |               |   SB          |           SS  |           SS  |               |
     /// SB      SS  |   SB          |               |           IS  |           SS  |           SS  |           IS  |           IS  |           SS  |
     ///         IS  |               |               |               |           IS  |           IS  |           LS  |           LS  |           IS  |
+    ///Break Support Line or break Resistance Line
+    /// Up, Up, Up  |   Up, Up, En  |   Up, Up, Dn  |   Up, En, Dn  |   Up, En, En  |   Up, En, Up  |   Up, Dn, Dn  |   Up, Dn, En  |   Up, Dn, Up  |
+    /// SS      SB  |   SS      SB  |   SS      SB  |   SS          |   SS      SB  |   SS      SB  |   SS          |   SS          |   SS          |
+    /// IS      SB  |   IS      SB  |   IS      SB  |   IS      SB  |   IS      SB  |   IS      SB  |   IS      SB  |   IS      SB  |   IS      SB  |
+    /// LS      SB  |   LS      SB  |   LS      SB  |   LS      SB  |   LS      SB  |   LS      SB  |   LS      SB  |   LS      SB  |   LS      SB  |
+    /// 
+    /// 
+    /// En, Up, Up  |   En, Up, En  |   En, Up, Dn  |   En, En, Dn  |   En, En, En  |   En, En, Up  |   En, Dn, Dn  |   En, Dn, En  |   En, Dn, Up  |
+    /// SS      SB  |   SS      SB  |   SS      SB  |   SS          |               |   SS      SB  |   SS          |   SS          |   SS          |
+    /// IS      SB  |   IS      SB  |   IS      SB  |               |               |               |   IS          |   IS          |   IS          |
+    ///         SB  |               |               |               |               |               |   LS          |   LS          |   LS          |
+    /// 
+    /// 
+    /// Dn, Up, Up  |   Dn, Up, En  |   Dn, Up, Dn  |   Dn, En, Dn  |   Dn, En, En  |   Dn, En, Up  |   Dn, Dn, Dn  |   Dn, Dn, En  |   Dn, Dn, Up  |
+    /// SS      SB  |   SS      SB  |   SS      SB  |   SS          |   SS          |   SS          |   SS          |   SS          |   SS          |
+    /// IS          |   IS          |   IS          |   IS          |   IS          |   IS          |   IS          |   IS          |   IS          |
+    /// LS          |   LS          |   LS          |   LS          |   LS          |   LS          |   LS          |   LS          |   LS          |
     public class TrendChannelSuggestionAnalyzer : ISuggestionAnalyzer
     {
-        private TrendChannelAnalyzer trendChannelAnalyzer = new TrendChannelAnalyzer();
+        protected TrendChannelAnalyzer TrendChannelAnalyzer = new TrendChannelAnalyzer();
         private readonly static TrendChannelSuggestionAnalyzer UpUpUp = new UpUpUpTrendChannelSuggestionAnalyzer();
         private readonly static TrendChannelSuggestionAnalyzer UpUpEven = new UpUpEvenTrendChannelSuggestionAnalyzer();
         private readonly static TrendChannelSuggestionAnalyzer UpUpDown = new UpUpDownTrendChannelSuggestionAnalyzer();
@@ -75,9 +93,9 @@ namespace Market.Suggestions
             var shortTransactions = orderedList.GetRearPartial(shortTerm);
             var interTransactions = orderedList.GetRearPartial(interTerm);
             var longTransactions = orderedList.GetRearPartial(longTerm);
-            var shortTrendChannel = trendChannelAnalyzer.AnalyzeTrendChannel(shortTransactions);
-            var interTrendChannel = trendChannelAnalyzer.AnalyzeTrendChannel(interTransactions);
-            var longTrendChannel = trendChannelAnalyzer.AnalyzeTrendChannel(longTransactions);
+            var shortTrendChannel = TrendChannelAnalyzer.AnalyzeTrendChannel(shortTransactions);
+            var interTrendChannel = TrendChannelAnalyzer.AnalyzeTrendChannel(interTransactions);
+            var longTrendChannel = TrendChannelAnalyzer.AnalyzeTrendChannel(longTransactions);
             var shortPrice = CalculateSupportResistancePrice(shortTrendChannel);
             var interPrice = CalculateSupportResistancePrice(interTrendChannel);
             var longPrice = CalculateSupportResistancePrice(longTrendChannel);
@@ -281,7 +299,7 @@ namespace Market.Suggestions
                 interPrice, longTrendChannel, longPrice);
             if (certainty > 0)
             {
-                SetSuggestion(UpUpUp);
+                SetSuggestion(analyzer);
             }
             return certainty;
         }
@@ -315,11 +333,35 @@ namespace Market.Suggestions
                 resistanceIndex++;
                 supportIndex--;
             }
-            double resistancePrice = trendChannelAnalyzer.CalculatePriceAt(resistanceIndex,
+            double resistancePrice = TrendChannelAnalyzer.CalculatePriceAt(resistanceIndex,
                 trendChannel.ResistanceChannelRatio, trendChannel.ResistanceStartPrice, 0);
-            double supportPrice = trendChannelAnalyzer.CalculatePriceAt(supportIndex,
+            double supportPrice = TrendChannelAnalyzer.CalculatePriceAt(supportIndex,
                 trendChannel.SupportChannelRatio, trendChannel.SupportStartPrice, 0);
             return new Tuple<double, double>(supportPrice, resistancePrice);
+        }
+
+        protected bool IsItNewSupportLine(IList<TransactionData> orderredTransactions, Channel channel)
+        {
+            IList<TransactionData> previousTransactions =
+                orderredTransactions.GetRearPartial(channel.Length + 1).GetFrontPartial(channel.Length);
+            var previousChannel = TrendChannelAnalyzer.AnalyzeTrendChannel(previousTransactions);
+            var expectedSupportPrice = TrendChannelAnalyzer.CalculatePriceAt(channel.Length, previousChannel.SupportChannelRatio,
+                previousChannel.SupportStartPrice, 0);
+            var supportPrice = TrendChannelAnalyzer.CalculatePriceAt(channel.Length - 1, channel.SupportChannelRatio,
+                channel.SupportStartPrice, 0);
+            return (channel.SupportChannelRatio < previousChannel.SupportChannelRatio && supportPrice < expectedSupportPrice);
+        }
+
+        protected bool IsItNewResistanceLine(IList<TransactionData> orderredTransactions, Channel channel)
+        {
+            IList<TransactionData> previousTransactions =
+                orderredTransactions.GetRearPartial(channel.Length + 1).GetFrontPartial(channel.Length);
+            var previousChannel = TrendChannelAnalyzer.AnalyzeTrendChannel(previousTransactions);
+            var expectedResistancePrice = TrendChannelAnalyzer.CalculatePriceAt(channel.Length, previousChannel.ResistanceChannelRatio,
+                previousChannel.ResistanceStartPrice, 0);
+            var resistancePrice = TrendChannelAnalyzer.CalculatePriceAt(channel.Length - 1, channel.ResistanceChannelRatio,
+                channel.ResistanceStartPrice, 0);
+            return (channel.ResistanceChannelRatio > previousChannel.ResistanceChannelRatio && resistancePrice > expectedResistancePrice);
         }
     }
 }

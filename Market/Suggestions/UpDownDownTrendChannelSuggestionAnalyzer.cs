@@ -27,14 +27,14 @@ namespace Market.Suggestions
                 Price = interPrice.Item2 + interChannel.ResistanceChannelRatio;
                 return 1;
             }
-            //down to 100 support - short buy
-            if (orderedTransactions[count - 1].Low <= longPrice.Item1)
-            {
-                Term = Term.Short;
-                Action = Action.Buy;
-                Price = longPrice.Item1 - longChannel.SupportChannelRatio;
-                return 1;
-            }
+            ////down to 100 support - short buy
+            //if (orderedTransactions[count - 1].Low <= longPrice.Item1)
+            //{
+            //    Term = Term.Short;
+            //    Action = Action.Buy;
+            //    Price = longPrice.Item1 - longChannel.SupportChannelRatio;
+            //    return 1;
+            //}
             return 0;
         }
     }
