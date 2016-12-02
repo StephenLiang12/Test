@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -34,6 +35,28 @@ namespace Market.Tasks
                 stock.Id = stockid + ".TO";
                 stock.Name = items[1];
                 stock.AvgVolume = volume;
+                context.Stocks.Add(stock);
+                context.SaveChanges();
+                count++;
+            } while (reader.EndOfStream == false);
+            return count;
+        }
+
+        public int AddStockFromEodSimpleData(StreamReader reader)
+        {
+            string firstLine = reader.ReadLine();
+            int count = 0;
+            do
+            {
+                string line = reader.ReadLine();
+                string[] items = line.Split(',');
+                string stockid = items[0];
+                if (stockid.Contains('.'))
+                    continue;
+                Stock stock = new Stock();
+                stock.Id = stockid + ".TO";
+                stock.Name = items[1];
+                //stock.AvgVolume = volume;
                 context.Stocks.Add(stock);
                 context.SaveChanges();
                 count++;
@@ -79,15 +102,19 @@ namespace Market.Tasks
                 string firstLine = reader.ReadLine();
                 double sumOfVolume = 0;
                 int count = 0;
-                TransactionData data;
+                OriginalTransactionData data;
                 while (webRequest.GetTransactionData(reader, out data))
                 {
                     data.StockKey = stock.Key;
-                    if (context.TransactionDatas.Any(
+                    if (context.OriginalTransactionData.Any(
                             d =>
                                 d.StockKey == data.StockKey && d.TimeStamp == data.TimeStamp &&
                                 d.Period == data.Period) == false)
-                        context.TransactionDatas.Add(data);
+                    {
+                        context.OriginalTransactionData.Add(data);
+                        var d = data.GetTransactionData();
+                        context.TransactionData.Add(d);
+                    }
                     sumOfVolume += data.Volume;
                     count++;
                 }
@@ -100,6 +127,21 @@ namespace Market.Tasks
                 response.Close();
             }
             return statusCode;
+        }
+
+        public void RegenerateTransactionDataFromOriginalData(int stockKey)
+        {
+            IList<TransactionData> data = context.TransactionData.Where(t => t.StockKey == stockKey).ToList();
+            context.TransactionData.RemoveRange(data);
+            foreach (var source in context.OriginalTransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
+            {
+                context.TransactionData.Add(source.GetTransactionData());
+            }
+            foreach (var split in context.Splits.Where(s => s.StockKey == stockKey).OrderBy(s => s.TimeStamp))
+            {
+                ApplySplitOnTransactionData(stockKey, split);
+            }
+            context.SaveChanges();
         }
 
         public HttpStatusCode GetSplitFromInternet(string stockId)
@@ -143,19 +185,26 @@ namespace Market.Tasks
                     if (context.Splits.Any(s => s.StockKey == stock.Key && s.TimeStamp == splitTimeStamp))
                         continue;
                     context.Splits.Add(split);
-                    foreach (var transaction in context.TransactionDatas.Where(t => t.StockKey == stock.Key && t.TimeStamp < splitTimeStamp))
-                    {
-                        transaction.Open /= split.SplitRatio;
-                        transaction.Close /= split.SplitRatio;
-                        transaction.High /= split.SplitRatio;
-                        transaction.Low /= split.SplitRatio;
-                    }
+                    ApplySplitOnTransactionData(stock.Key, split);
+                    split.Applied = true;
                 }
                 context.SaveChanges();
                 reader.Close();
                 response.Close();
             }
             return statusCode;
+        }
+
+        private void ApplySplitOnTransactionData(int stockKey, Split split)
+        {
+            foreach (
+                var transaction in context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp < split.TimeStamp))
+            {
+                transaction.Open /= split.SplitRatio;
+                transaction.Close /= split.SplitRatio;
+                transaction.High /= split.SplitRatio;
+                transaction.Low /= split.SplitRatio;
+            }
         }
     }
 }

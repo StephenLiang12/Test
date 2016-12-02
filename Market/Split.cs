@@ -8,5 +8,6 @@ namespace Market
         public int StockKey { get; set; }
         public DateTime TimeStamp { get; set; } 
         public double SplitRatio { get; set; }
+        public bool Applied { get; set; }
     }
 }

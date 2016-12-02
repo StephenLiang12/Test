@@ -32,5 +32,15 @@ namespace Market
             }
             return partial;
         }
+
+        public static IList<double> GetData<T>(this IList<T> list, Func<T, double> func)
+        {
+            IList<double> data = new List<double>(list.Count);
+            foreach (T t in list)
+            {
+                data.Add(func(t));
+            }
+            return data;
+        }
     }
 }

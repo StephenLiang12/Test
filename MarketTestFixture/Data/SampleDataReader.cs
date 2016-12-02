@@ -32,16 +32,24 @@ namespace Market.TestFixture.Data
             }
         }
 
+        public static StreamReader EodSimpleDataReader
+        {
+            get
+            {
+                return new StreamReader(GetEmbeddedFile("TSX.csv"));
+            }
+        }
+
         public static IList<TransactionData> GetTransactionData()
         {
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
             StreamReader reader = new StreamReader(GetEmbeddedFile("AverageSampleData.txt"));
             string fistLine = reader.ReadLine();
             IList<TransactionData> list = new List<TransactionData>();
-            TransactionData data;
+            OriginalTransactionData data;
             while (webRequest.GetTransactionData(reader, out data))
             {
-                list.Add(data);
+                list.Add(data.GetTransactionData());
             }
             reader.Close();
             return list;

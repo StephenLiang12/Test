@@ -21,6 +21,24 @@ namespace Market.TestFixture
         }
 
         [TestMethod]
+        public void AbleToAddOriginalTransactionData()
+        {
+            StockContext context = new StockContext();
+            Stock stock = new Stock();
+            stock.Id = "TEST.TO";
+            stock.Name = "Test";
+            context.Stocks.Add(stock);
+            context.SaveChanges();
+            OriginalTransactionData data = new OriginalTransactionData();
+            data.StockKey = stock.Key;
+            data.TimeStamp = DateTime.Today;
+            data.Period = Period.Day;
+            context.OriginalTransactionData.Add(data);
+            context.SaveChanges();
+            Assert.IsTrue(data.Key > 0);
+        }
+
+        [TestMethod]
         public void AbleToAddTransactionData()
         {
             StockContext context = new StockContext();
@@ -33,7 +51,7 @@ namespace Market.TestFixture
             data.StockKey = stock.Key;
             data.TimeStamp = DateTime.Today;
             data.Period = Period.Day;
-            context.TransactionDatas.Add(data);
+            context.TransactionData.Add(data);
             context.SaveChanges();
             Assert.IsTrue(data.Key > 0);
         }
@@ -51,6 +69,7 @@ namespace Market.TestFixture
             split.StockKey = stock.Key;
             split.TimeStamp = DateTime.Today;
             split.SplitRatio = 2;
+            split.Applied = true;
             context.Splits.Add(split);
             context.SaveChanges();
             Assert.IsTrue(split.Key > 0);
@@ -126,6 +145,26 @@ namespace Market.TestFixture
             context.Channels.Add(channel);
             context.SaveChanges();
             Assert.IsTrue(channel.Key > 0);
+        }
+
+        [TestMethod]
+        public void AbleToAddMovingAverageConvergenceDivergence()
+        {
+            StockContext context = new StockContext();
+            Stock stock = new Stock();
+            stock.Id = "TEST.TO";
+            stock.Name = "Test";
+            context.Stocks.Add(stock);
+            context.SaveChanges();
+            MovingAverageConvergenceDivergence MovingAverageConvergenceDivergence = new MovingAverageConvergenceDivergence();
+            MovingAverageConvergenceDivergence.StockKey = stock.Key;
+            MovingAverageConvergenceDivergence.TimeStamp = DateTime.Today;
+            MovingAverageConvergenceDivergence.MACD= 1;
+            MovingAverageConvergenceDivergence.Signal = 2;
+            MovingAverageConvergenceDivergence.Histogram = 3;
+            context.MovingAverageConvergenceDivergences.Add(MovingAverageConvergenceDivergence);
+            context.SaveChanges();
+            Assert.IsTrue(MovingAverageConvergenceDivergence.Key > 0);
         }
     }
 }

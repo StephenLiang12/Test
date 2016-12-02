@@ -48,7 +48,7 @@ namespace Market.Presentation
                 return;
 
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
-            foreach (var transactionData in stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
+            foreach (var transactionData in stockContext.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
             {
                 StartDateComboBox.Items.Add(transactionData.TimeStamp);
             }
@@ -65,7 +65,7 @@ namespace Market.Presentation
 
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
             var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue.ToString());
-            foreach (var transactionData in stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
+            foreach (var transactionData in stockContext.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
             {
                 if (transactionData.TimeStamp > startDate)
                     EndDateComboBox.Items.Add(transactionData.TimeStamp);
@@ -87,11 +87,11 @@ namespace Market.Presentation
                 return;
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
             var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
-            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            var endDate = stockContext.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
             if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
                 endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
             var orderedTransactionList =
-                stockContext.TransactionDatas.Where(
+                stockContext.TransactionData.Where(
                     t => t.StockKey == stockKey && t.TimeStamp >= startDate && t.TimeStamp <= endDate)
                     .OrderBy(t => t.TimeStamp).ToList();
             int count = orderedTransactionList.Count();
@@ -333,7 +333,7 @@ namespace Market.Presentation
                 return;
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
             var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
-            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            var endDate = stockContext.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
             if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
                 endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
             foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 100))
@@ -404,7 +404,7 @@ namespace Market.Presentation
                 return;
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
             var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
-            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            var endDate = stockContext.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
             if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
                 endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
             foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 50))
@@ -432,7 +432,7 @@ namespace Market.Presentation
                 return;
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
             var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
-            var endDate = stockContext.TransactionDatas.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            var endDate = stockContext.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
             if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
                 endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
             foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 20))

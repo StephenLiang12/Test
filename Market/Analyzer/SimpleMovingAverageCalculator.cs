@@ -1,32 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Market.Analyzer
 {
     public class SimpleMovingAverageCalculator
     {
-        public MovingAverage CalculateAverage(IList<TransactionData> orderedTransactions, int numberOfTransactions)
+        public MovingAverage CalculateAverage(double[] data, int numberOfTransactions)
         {
-            if (orderedTransactions.Count < numberOfTransactions)
-                throw new ArgumentException(string.Format("Not enough transaction data for {0} simple moving average calculation", numberOfTransactions));
+            if (data.Length < numberOfTransactions)
+                throw new ArgumentException(string.Format("Not enough data for {0} simple moving average calculation", numberOfTransactions));
             MovingAverage average = new MovingAverage();
-            average.Averages = new double[orderedTransactions.Count];
+            average.Averages = new double[data.Length];
             average.NumberOfTransactions = numberOfTransactions;
             double sum = 0;
             for (int i = 0; i < numberOfTransactions; i++)
             {
                 average.Averages[i] = 0;
-                sum += orderedTransactions[i].Close;
+                sum += data[i];
             }
             average.Averages[numberOfTransactions - 1] = sum/numberOfTransactions;
-            for (int i = numberOfTransactions; i < orderedTransactions.Count; i++)
+            for (int i = numberOfTransactions; i < data.Length; i++)
             {
-                sum -= orderedTransactions[i - numberOfTransactions].Close;
-                sum += orderedTransactions[i].Close;
+                sum -= data[i - numberOfTransactions];
+                sum += data[i];
                 average.Averages[i] = sum/numberOfTransactions;
             }
             return average;
+        }
+
+        public MovingAverage CalculateAverage(IList<TransactionData> orderedTransactions, int numberOfTransactions)
+        {
+            double[] data = new double[orderedTransactions.Count];
+            for (int i = 0; i < orderedTransactions.Count; i++)
+            {
+                data[i] = orderedTransactions[i].Close;
+            }
+            return CalculateAverage(data, numberOfTransactions);
         }
 
         public void CalculateAverage(IList<TransactionData> orderedTransactions, MovingAverage movingAverage, int newTransactions)

@@ -84,9 +84,9 @@ namespace Market.Web
             return fistCharacter + rest;
         }
 
-        public override bool GetTransactionData(StreamReader reader, out TransactionData data)
+        public override bool GetTransactionData(StreamReader reader, out OriginalTransactionData data)
         {
-            data = new TransactionData();
+            data = new OriginalTransactionData();
             string line = reader.ReadLine();
             if (reader.EndOfStream)
                 return false;

@@ -19,7 +19,7 @@ namespace Market.TestFixture.Tasks
         public void AbleToGetTransactionDataFromInternet()
         {
             StockTask task = new StockTask();
-            Assert.AreEqual(HttpStatusCode.OK, task.GetTransactionDataFromInternet("HNU.TO"));
+            Assert.AreEqual(HttpStatusCode.OK, task.GetTransactionDataFromInternet("G.TO"));
         }
 
         [TestMethod]
@@ -38,14 +38,23 @@ namespace Market.TestFixture.Tasks
         }
 
         [TestMethod]
+        public void AbleToAddStockFromSimpleEodData()
+        {
+            StockTask task = new StockTask();
+            int count = task.AddStockFromEodSimpleData(SampleDataReader.EodSimpleDataReader);
+            Console.WriteLine(count);
+        }
+
+        [TestMethod]
         public void AbleToGetAllTmxTransactionDataFromInternet()
         {
             StockTask task = new StockTask();
+            task.GetTransactionDataFromInternet("HOD.TO");
             StockContext context = new StockContext();
-            foreach (var stock in context.Stocks.ToList())
-            {
-                task.GetTransactionDataFromInternet(stock.Id);
-            }
+            //foreach (var stock in context.Stocks.ToList())
+            //{
+            //    task.GetTransactionDataFromInternet(stock.Id);
+            //}
         }
 
         [TestMethod]
@@ -53,7 +62,7 @@ namespace Market.TestFixture.Tasks
         {
             StockTask task = new StockTask();
             StockContext context = new StockContext();
-            task.GetSplitFromInternet("HOU.TO");
+            task.GetSplitFromInternet("HOD.TO");
             //foreach (var stock in context.Stocks.ToList())
             //{
             //    if (stock.AbleToGetTransactionDataFromWeb)
@@ -70,7 +79,7 @@ namespace Market.TestFixture.Tasks
                 if (stock.AbleToGetTransactionDataFromWeb == false)
                     continue;
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 SimpleMovingAverageCalculator calculator = new SimpleMovingAverageCalculator();
                 try
                 {
@@ -123,7 +132,7 @@ namespace Market.TestFixture.Tasks
                 if (stock.AbleToGetTransactionDataFromWeb == false)
                     continue;
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 int count = orderedList.Count;
                 MovingAverage avg5 = new MovingAverage();
                 avg5.NumberOfTransactions = 5;
@@ -192,7 +201,7 @@ namespace Market.TestFixture.Tasks
                     //continue;
                 var stock = context.Stocks.First(s => s.Id == "TD.TO");
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
                 MovingAverage avg5 = new MovingAverage();
                 avg5.NumberOfTransactions = 5;
@@ -249,7 +258,7 @@ namespace Market.TestFixture.Tasks
                 //    continue;
                 Stock stock = context.Stocks.First(s => s.Id == "BNS.TO");
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
                 MovingAverage avg5 = new MovingAverage();
                 avg5.NumberOfTransactions = 5;
@@ -306,7 +315,7 @@ namespace Market.TestFixture.Tasks
                 //    continue;
                 var stock = context.Stocks.First(s => s.Id == "TD.TO");
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
                 MovingAverage avg5 = new MovingAverage();
                 avg5.NumberOfTransactions = 5;
@@ -365,7 +374,7 @@ namespace Market.TestFixture.Tasks
                     continue;
 
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t => t.StockKey == stock.Key && t.TimeStamp > cutOffDateTime).OrderBy(t => t.TimeStamp).ToList();
+                    context.TransactionData.Where(t => t.StockKey == stock.Key && t.TimeStamp > cutOffDateTime).OrderBy(t => t.TimeStamp).ToList();
                 MovingAverageConvergenceDivergenceAnalyzer analyzer = new MovingAverageConvergenceDivergenceAnalyzer();
                 MovingAverage avg5 = new MovingAverage();
                 avg5.NumberOfTransactions = 5;

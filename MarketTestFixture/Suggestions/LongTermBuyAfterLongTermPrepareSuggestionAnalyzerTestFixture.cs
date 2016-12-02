@@ -18,7 +18,7 @@ namespace Market.TestFixture.Suggestions
                 var endDate = new DateTime(2014, 12, 1);
                 var startDate = endDate.AddDays(-400);
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t =>
+                    context.TransactionData.Where(t =>
                         t.StockKey == stock.Key && t.TimeStamp <= endDate && t.TimeStamp >= startDate
                         ).OrderBy(t => t.TimeStamp).ToList();
                 var suggestionAnalyzer = new LongTermBuyAfterLongTermPrepareSuggestionAnalyzer();

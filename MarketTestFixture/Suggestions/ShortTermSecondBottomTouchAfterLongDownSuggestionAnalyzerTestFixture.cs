@@ -22,7 +22,7 @@ namespace Market.TestFixture.Suggestions
                 var endDate = new DateTime(2015, 1, 5);
                 var startDate = endDate.AddDays(-300);
                 IList<TransactionData> orderedList =
-                    context.TransactionDatas.Where(t =>
+                    context.TransactionData.Where(t =>
                         t.StockKey == stock.Key && t.TimeStamp <= endDate && t.TimeStamp >= startDate
                         ).OrderBy(t => t.TimeStamp).ToList();
                 ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer suggestionAnalyzer = new ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer();

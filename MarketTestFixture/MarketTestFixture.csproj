@@ -65,6 +65,7 @@
     <Compile Include="Analyzer\CandleStickPatterns\HangingManTestFixture.cs" />
     <Compile Include="Analyzer\CandleStickPatterns\MarubozuTestFixture.cs" />
     <Compile Include="Analyzer\Channels\TrendChannelAnalyzerTestFixture.cs" />
+    <Compile Include="Analyzer\ExponentMovingAverageCalculatorTestFixture.cs" />
     <Compile Include="Analyzer\MovingAverageAnalyzerTestFixture.cs" />
     <Compile Include="Analyzer\SimpleMovingAverageCalculatorTestFixture.cs" />
     <Compile Include="CodeTestFixture.cs" />
@@ -90,6 +91,7 @@
       <SubType>Designer</SubType>
     </None>
     <EmbeddedResource Include="Data\EodData.csv" />
+    <EmbeddedResource Include="Data\TSX.csv" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -104,7 +106,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Data\AverageSampleData.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

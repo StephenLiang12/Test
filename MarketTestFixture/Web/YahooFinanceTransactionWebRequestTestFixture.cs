@@ -39,7 +39,7 @@ namespace Market.TestFixture.Web
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
             StreamReader reader = SampleDataReader.YahooFinanceTransactionDataReader;
             string firstLine = reader.ReadLine();
-            TransactionData data;
+            OriginalTransactionData data;
             bool hasData = webRequest.GetTransactionData(reader, out data);
             Assert.IsTrue(hasData);
             Assert.AreEqual(new DateTime(2014, 9, 29), data.TimeStamp);

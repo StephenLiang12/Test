@@ -11,7 +11,7 @@ namespace Market.Web
         public Period TransactionPeriod { get; set; }
         public abstract string GenerateTransactionDataWebRequestUrl();
         public abstract string GenerateDividendWebRequestUrl();
-        public abstract bool GetTransactionData(StreamReader reader, out TransactionData data);
+        public abstract bool GetTransactionData(StreamReader reader, out OriginalTransactionData data);
         public abstract bool GetSplit(StreamReader reader, out Split split);
     }
 }
