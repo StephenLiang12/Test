@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Market.Analyzer;
 using Market.Exceptions;
 using Market.Tasks;
@@ -46,15 +48,23 @@ namespace Market.TestFixture.Tasks
         }
 
         [TestMethod]
-        public void AbleToGetAllTmxTransactionDataFromInternet()
+        public void AbleToGetAllTmxTransactionDataFrbomInternet()
         {
             StockTask task = new StockTask();
-            task.GetTransactionDataFromInternet("HOD.TO");
             StockContext context = new StockContext();
-            //foreach (var stock in context.Stocks.ToList())
-            //{
-            //    task.GetTransactionDataFromInternet(stock.Id);
-            //}
+            foreach (var stock in context.Stocks.ToList())
+            {
+                try
+                {
+                    task.GetTransactionDataFromInternet(stock.Id);
+                }
+                catch (IOException)
+                {
+                    Thread.Sleep(10*60*1000);
+                    Console.WriteLine("Retry on {0}", stock.Id);
+                    task.GetTransactionDataFromInternet(stock.Id);
+                }
+            }
         }
 
         [TestMethod]
@@ -62,12 +72,12 @@ namespace Market.TestFixture.Tasks
         {
             StockTask task = new StockTask();
             StockContext context = new StockContext();
-            task.GetSplitFromInternet("HOD.TO");
-            //foreach (var stock in context.Stocks.ToList())
-            //{
-            //    if (stock.AbleToGetTransactionDataFromWeb)
-            //        task.GetSplitFromInternet(stock.Id);
-            //}
+            //task.GetSplitFromInternet("HOD.TO");
+            foreach (var stock in context.Stocks.ToList())
+            {
+                if (stock.AbleToGetTransactionDataFromWeb)
+                    task.GetSplitFromInternet(stock.Id);
+            }
         }
 
         [TestMethod]

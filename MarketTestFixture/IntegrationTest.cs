@@ -993,7 +993,7 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             SortedList<DateTime, Suggestion> suggestionSortedList = new SortedList<DateTime, Suggestion>();
-            int stockKey = 479;
+            int stockKey = 199;
             double expectedAmmount = 10000;
             foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey && s.AnalyzerName.Contains("Moving")))
             {
@@ -1183,7 +1183,7 @@ namespace Market.TestFixture
             Suggestion previousSuggestion = null;
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 479)
+                if (stock.Key != 199)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();

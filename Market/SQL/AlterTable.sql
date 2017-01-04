@@ -22,19 +22,6 @@ if not exists (select * from sysobjects where name = 'TransactionData' and xtype
 		Volume	float not null
 	)
 
---Add Unique Constraint on TransactionData table on StockKey, TimeStamp and Period colums
-if (not exists (select  oc.name
-		from sysobjects o
-		inner join sysConstraints c on o.id = c.id
-		inner join sysobjects oc on c.constid = oc.id
-		inner join sysindexes i on i.id=o.id and i.name = oc.name
-		inner join sysindexkeys ik on ik.id = o.id and i.indid = i.indid
-		inner join syscolumns col on col.id= o.id and col.colid = ik.colid
-		where o.name = 'TransactionData'
-		  and oc.xtype='UQ'
-		  and col.name = 'TimeStamp'))
-	Alter table TransactionData add Unique (StockKey, TimeStamp, Period)
-
 --Add SimpleAvg5 Colume on TransactionData table
 if (not exists (select c.name from sysobjects o
 				inner join syscolumns c on o.id = c.id
@@ -193,6 +180,36 @@ if not exists (select * from sysobjects where name = 'OriginalTransactionData' a
 		Low		float not null,
 		Volume	float not null
 	)
+
+--set unique constraints on StockKey, TimeStamp and Period column on OriginalTransactionData
+if (not exists (select i.* from sysobjects o
+                    inner join sys.indexes i on o.id = i.object_id
+                    where o.name = 'OriginalTransactionData'
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'StockKey')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'TimeStamp')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'Period')))
+    alter table OriginalTransactionData add unique (StockKey, TimeStamp, Period)
+
+--set unique constraints on StockKey, TimeStamp and Period column on TransactionData
+if (not exists (select i.* from sysobjects o
+                    inner join sys.indexes i on o.id = i.object_id
+                    where o.name = 'TransactionData'
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'StockKey')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'TimeStamp')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'Period')))
+    alter table TransactionData add unique (StockKey, TimeStamp, Period)
 
 --Add Applied Colume on Split table
 if (not exists (select c.name from sysobjects o

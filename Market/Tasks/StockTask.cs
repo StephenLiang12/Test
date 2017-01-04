@@ -10,17 +10,16 @@ namespace Market.Tasks
 {
     public class StockTask : IStockTask
     {
-        private readonly StockContext context;
         private readonly ITransactionWebRequestFactory webRequestFactory;
 
         public StockTask()
         {
-            context = new StockContext();
             webRequestFactory = new TransactionWebRequestFactory();
         }
 
         public int AddStockFromEodData(StreamReader reader)
         {
+            StockContext context = new StockContext();
             string firstLine = reader.ReadLine();
             int count = 0;
             do
@@ -44,6 +43,7 @@ namespace Market.Tasks
 
         public int AddStockFromEodSimpleData(StreamReader reader)
         {
+            StockContext context = new StockContext();
             string firstLine = reader.ReadLine();
             int count = 0;
             do
@@ -66,71 +66,84 @@ namespace Market.Tasks
 
         public HttpStatusCode GetTransactionDataFromInternet(string stockId)
         {
-            var webRequest = webRequestFactory.CreateTransactionWebRequest(stockId);
-            WebRequest request = WebRequest.Create(webRequest.GenerateTransactionDataWebRequestUrl());
-            request.Method = "GET";
-            ((HttpWebRequest)request).UserAgent = ".NET Framework Client";
-            WebResponse response;
-            try
+            StockContext context = new StockContext();
+            int stockKey = context.Stocks.First(s => s.Id == stockId).Key;
+            DateTime startDateTime = new DateTime(2011, 1, 1);
+            if (context.TransactionData.Any(t => t.StockKey == stockKey))
             {
-                response = request.GetResponse();
+                DateTime lastDateTime = context.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+                startDateTime = lastDateTime.AddDays(1);
             }
-            catch (WebException)
+            if (startDateTime <= DateTime.Today)
             {
-                var stock = context.Stocks.First(s => s.Id == stockId);
-                stock.AbleToGetTransactionDataFromWeb = false;
-                context.SaveChanges();
-                return HttpStatusCode.NotFound;
-            }
-            var statusCode = ((HttpWebResponse)response).StatusCode;
-            if (statusCode == HttpStatusCode.OK)
-            {
-                var dataStream = response.GetResponseStream();
-                StreamReader reader = new StreamReader(dataStream);
-                //var writer = File.CreateText(@"c:\Test.txt");
-                //do
-                //{
-                //    string line = reader.ReadLine();
-                //    writer.WriteLine(line);
-                //} while (reader.EndOfStream == false);
-                //writer.Close();
-                if (context.Stocks.Any(s => s.Id == stockId) == false)
+                var webRequest = webRequestFactory.CreateTransactionWebRequest(stockId, startDateTime);
+                WebRequest request = WebRequest.Create(webRequest.GenerateTransactionDataWebRequestUrl());
+                request.Method = "GET";
+                ((HttpWebRequest) request).UserAgent = ".NET Framework Client";
+                WebResponse response;
+                try
                 {
-                    throw new ArgumentException("Unknow Stock Id {0}", stockId);
+                    response = request.GetResponse();
                 }
-                var stock = context.Stocks.First(s => s.Id == stockId);
-                string firstLine = reader.ReadLine();
-                double sumOfVolume = 0;
-                int count = 0;
-                OriginalTransactionData data;
-                while (webRequest.GetTransactionData(reader, out data))
+                catch (WebException)
                 {
-                    data.StockKey = stock.Key;
-                    if (context.OriginalTransactionData.Any(
-                            d =>
-                                d.StockKey == data.StockKey && d.TimeStamp == data.TimeStamp &&
-                                d.Period == data.Period) == false)
+                    var stock = context.Stocks.First(s => s.Id == stockId);
+                    stock.AbleToGetTransactionDataFromWeb = false;
+                    context.SaveChanges();
+                    return HttpStatusCode.NotFound;
+                }
+                var statusCode = ((HttpWebResponse) response).StatusCode;
+                if (statusCode == HttpStatusCode.OK)
+                {
+                    var dataStream = response.GetResponseStream();
+                    StreamReader reader = new StreamReader(dataStream);
+                    //var writer = File.CreateText(@"c:\Test.txt");
+                    //do
+                    //{
+                    //    string line = reader.ReadLine();
+                    //    writer.WriteLine(line);
+                    //} while (reader.EndOfStream == false);
+                    //writer.Close();
+                    if (context.Stocks.Any(s => s.Id == stockId) == false)
                     {
-                        context.OriginalTransactionData.Add(data);
-                        var d = data.GetTransactionData();
-                        context.TransactionData.Add(d);
+                        throw new ArgumentException("Unknow Stock Id {0}", stockId);
                     }
-                    sumOfVolume += data.Volume;
-                    count++;
+                    var stock = context.Stocks.First(s => s.Id == stockId);
+                    string firstLine = reader.ReadLine();
+                    double sumOfVolume = 0;
+                    int count = 0;
+                    OriginalTransactionData data;
+                    while (webRequest.GetTransactionData(reader, out data))
+                    {
+                        data.StockKey = stock.Key;
+                        if (context.OriginalTransactionData.Any(
+                                d =>
+                                    d.StockKey == data.StockKey && d.TimeStamp == data.TimeStamp &&
+                                    d.Period == data.Period) == false)
+                        {
+                            context.OriginalTransactionData.Add(data);
+                            var d = data.GetTransactionData();
+                            context.TransactionData.Add(d);
+                        }
+                        sumOfVolume += data.Volume;
+                        count++;
+                    }
+                    if (count == 0)
+                        return statusCode;
+                    stock.AvgVolume = Math.Round(sumOfVolume/count);
+                    stock.AbleToGetTransactionDataFromWeb = true;
+                    context.SaveChanges();
+                    reader.Close();
+                    response.Close();
                 }
-                if (count == 0)
-                    return statusCode;
-                stock.AvgVolume = Math.Round(sumOfVolume/count);
-                stock.AbleToGetTransactionDataFromWeb = true;
-                context.SaveChanges();
-                reader.Close();
-                response.Close();
+                return statusCode;
             }
-            return statusCode;
+            return HttpStatusCode.OK;
         }
 
         public void RegenerateTransactionDataFromOriginalData(int stockKey)
         {
+            StockContext context = new StockContext();
             IList<TransactionData> data = context.TransactionData.Where(t => t.StockKey == stockKey).ToList();
             context.TransactionData.RemoveRange(data);
             foreach (var source in context.OriginalTransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
@@ -146,6 +159,7 @@ namespace Market.Tasks
 
         public HttpStatusCode GetSplitFromInternet(string stockId)
         {
+            StockContext context = new StockContext();
             var webRequest = webRequestFactory.CreateTransactionWebRequest(stockId);
             WebRequest request = WebRequest.Create(webRequest.GenerateDividendWebRequestUrl());
             request.Method = "GET";
@@ -197,6 +211,7 @@ namespace Market.Tasks
 
         private void ApplySplitOnTransactionData(int stockKey, Split split)
         {
+            StockContext context = new StockContext();
             foreach (
                 var transaction in context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp < split.TimeStamp))
             {

@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Market.Analyzer.Channels;
-using Market.Suggestions.TrendChannels;
 
-namespace Market.Suggestions
+namespace Market.Suggestions.TrendChannels
 {
     public class UpUpEvenTrendChannelSuggestionAnalyzer : TrendChannelSuggestionAnalyzer
     {

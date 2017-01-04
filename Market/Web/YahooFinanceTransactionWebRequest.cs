@@ -88,7 +88,7 @@ namespace Market.Web
         {
             data = new OriginalTransactionData();
             string line = reader.ReadLine();
-            if (reader.EndOfStream)
+            if (reader.EndOfStream && string.IsNullOrEmpty(line))
                 return false;
             string[] items = line.Split(',');
             string[] dateItems = items[0].Split('-');
