@@ -35,5 +35,19 @@ namespace Market.Analyzer.Channels
             }
             return (count - outOfCoverage)/count;
         }
+
+        public static bool IsSupportStrong(this Channel channel)
+        {
+            if (channel.SupportChannelRatio >= 0)
+                return true;
+            return Math.Abs(channel.SupportChannelRatio)/channel.SupportStartPrice < 0.01;
+        }
+
+        public static bool IsResistanceStrong(this Channel channel)
+        {
+            if (channel.ResistanceChannelRatio <= 0)
+                return true;
+            return Math.Abs(channel.ResistanceChannelRatio)/channel.ResistanceStartPrice< 0.01;
+        }
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using Market.Analyzer;
+using Market.Analyzer.Channels;
 using Market.Web;
 using Market.Web.Factory;
 
@@ -141,20 +143,111 @@ namespace Market.Tasks
             return HttpStatusCode.OK;
         }
 
+        public void RegenerateTransactionDataFromOriginalData()
+        {
+            StockContext context = new StockContext();
+            IList<int> splits = context.Splits.Select(s => s.StockKey).Distinct().ToList();
+            foreach (int stockKey in splits)
+            {
+                RegenerateTransactionDataFromOriginalData(stockKey);
+                context.Database.ExecuteSqlCommand("delete from MovingAverageConvergenceDivergence where StockKey = " + stockKey);
+                context.Database.ExecuteSqlCommand("delete from Channel where StockKey = " + stockKey);
+                CalculateMovingAverageConvergenceDivergence(stockKey);
+                AnalyzeTrendChannel(stockKey, 20);
+                AnalyzeTrendChannel(stockKey, 50);
+                AnalyzeTrendChannel(stockKey, 100);
+            }
+        }
         public void RegenerateTransactionDataFromOriginalData(int stockKey)
         {
             StockContext context = new StockContext();
-            IList<TransactionData> data = context.TransactionData.Where(t => t.StockKey == stockKey).ToList();
-            context.TransactionData.RemoveRange(data);
+            context.Database.ExecuteSqlCommand("delete from TransactionData where StockKey = " + stockKey);
             foreach (var source in context.OriginalTransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
             {
                 context.TransactionData.Add(source.GetTransactionData());
             }
             foreach (var split in context.Splits.Where(s => s.StockKey == stockKey).OrderBy(s => s.TimeStamp))
             {
-                ApplySplitOnTransactionData(stockKey, split);
+                ApplySplitOnTransactionData(context, stockKey, split);
             }
             context.SaveChanges();
+        }
+
+        public void CalculateMovingAverageConvergenceDivergence()
+        {
+            StockContext context = new StockContext();
+            foreach (var stock in context.Stocks)
+            {
+                try
+                {
+                    CalculateMovingAverageConvergenceDivergence(stock.Key);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+        public void CalculateMovingAverageConvergenceDivergence(int stockKey)
+        {
+            StockContext context = new StockContext();
+            MovingAverageConvergenceDivergenceCalculator calculator = new MovingAverageConvergenceDivergenceCalculator();
+            IList<TransactionData> orderedList = context.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp).ToList();
+            {
+                var result = calculator.Calculate(orderedList, 12, 26, 9);
+                foreach (var movingAverageConvergenceDivergence in result)
+                {
+                    if (context.MovingAverageConvergenceDivergences.Any(m => m.StockKey == stockKey && m.TimeStamp == movingAverageConvergenceDivergence.TimeStamp) == false)
+                        context.MovingAverageConvergenceDivergences.Add(movingAverageConvergenceDivergence);
+
+                }
+                context.SaveChanges();
+            }
+        }
+
+        public void AnalyzeTrendChannel()
+        {
+            StockContext context = new StockContext();
+            foreach (var stock in context.Stocks)
+            {
+                AnalyzeTrendChannel(stock.Key, 20);
+                AnalyzeTrendChannel(stock.Key, 50);
+                AnalyzeTrendChannel(stock.Key, 100);
+            }
+        }
+
+        public void AnalyzeTrendChannel(int stockKey, int length)
+        {
+            try
+            {
+
+                StockContext updateContext = new StockContext();
+                IList<TransactionData> orderedList =
+                    updateContext.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp).ToList();
+                var partialList = orderedList.GetFrontPartial(length);
+                for (int i = length; i <= orderedList.Count; i++)
+                {
+                    var timeStamp = partialList[0].TimeStamp;
+                    if (updateContext.Channels.Any(c => c.StockKey == stockKey && c.StartDate == timeStamp && c.Length == length) == false)
+                    {
+                        TrendChannelAnalyzer analyzer = new TrendChannelAnalyzer();
+                        var channel = analyzer.AnalyzeTrendChannel(partialList);
+                        updateContext.Channels.Add(channel);
+                        updateContext.SaveChanges();
+                    }
+                    if (i < orderedList.Count)
+                    {
+                        partialList.RemoveAt(0);
+                        partialList.Add(orderedList[i]);
+                    }
+                }
+                orderedList.Clear();
+                partialList.Clear();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         public HttpStatusCode GetSplitFromInternet(string stockId)
@@ -199,7 +292,7 @@ namespace Market.Tasks
                     if (context.Splits.Any(s => s.StockKey == stock.Key && s.TimeStamp == splitTimeStamp))
                         continue;
                     context.Splits.Add(split);
-                    ApplySplitOnTransactionData(stock.Key, split);
+                    ApplySplitOnTransactionData(context, stock.Key, split);
                     split.Applied = true;
                 }
                 context.SaveChanges();
@@ -209,9 +302,8 @@ namespace Market.Tasks
             return statusCode;
         }
 
-        private void ApplySplitOnTransactionData(int stockKey, Split split)
+        private void ApplySplitOnTransactionData(StockContext context, int stockKey, Split split)
         {
-            StockContext context = new StockContext();
             foreach (
                 var transaction in context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp < split.TimeStamp))
             {

@@ -6,6 +6,7 @@ using Market.Analyzer.Channels;
 using Market.Suggestions;
 using Market.Suggestions.MACD;
 using Market.Suggestions.TrendChannels;
+using Market.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Market.TestFixture
@@ -853,33 +854,18 @@ namespace Market.TestFixture
         public void AbleToCalculateChannel()
         {
             StockContext context = new StockContext();
-            TrendChannelAnalyzer analyzer = new TrendChannelAnalyzer();
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 192)
-                    continue;
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                try
+                if (context.OriginalTransactionData.Where(t => t.StockKey == stock.Key).Count() > 100)
                 {
-                    var length = 20;
-                    var partialList = orderedList.GetFrontPartial(length);
-                    for (int i = length; i < orderedList.Count; i++)
-                    {
-                        var channel = analyzer.AnalyzeTrendChannel(partialList);
-                        context.Channels.Add(channel);
-                        context.SaveChanges();
-                        partialList.RemoveAt(0);
-                        partialList.Add(orderedList[i]);
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    StockTask stockTask = new StockTask();
+                    stockTask.AnalyzeTrendChannel(stock.Key, 20);
+                    stockTask.AnalyzeTrendChannel(stock.Key, 50);
+                    stockTask.AnalyzeTrendChannel(stock.Key, 100);
                 }
             }
         }
+
 
         [TestMethod]
         public void AbleToGenerateSuggestionByTrendChannelAnalyzer()
@@ -993,7 +979,7 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             SortedList<DateTime, Suggestion> suggestionSortedList = new SortedList<DateTime, Suggestion>();
-            int stockKey = 199;
+            int stockKey = 378;
             double expectedAmmount = 10000;
             foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey && s.AnalyzerName.Contains("Moving")))
             {
@@ -1142,33 +1128,33 @@ namespace Market.TestFixture
         }
 
         [TestMethod]
-        public void AbleToCalculateMovingAverageConvergenceDivergence()
+        public void Learn()
         {
             StockContext context = new StockContext();
-            MovingAverageConvergenceDivergenceCalculator calculator = new MovingAverageConvergenceDivergenceCalculator();
-            foreach (var stock in context.Stocks.ToList())
+            Console.WriteLine("TimeStamp, Action, Term, Histogram, Suggested Price, Closed Price, Channel 20, Channel 50, Channel 100");
+            IList<Suggestion> suggestions = context.Suggestions.Where(s => s.StockKey == 378).OrderBy(s => s.TimeStamp).ToList();
+            foreach (var suggestion in suggestions)
             {
-                if (stock.Key != 477)
-                    continue;
-                var stockKey = stock.Key;
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                try
-                {
-                    var result = calculator.Calculate(orderedList, 12, 26, 9);
-                    foreach (var movingAverageConvergenceDivergence in result)
-                    {
-                        if (context.MovingAverageConvergenceDivergences.Any(m => m.StockKey == stockKey && m.TimeStamp == movingAverageConvergenceDivergence.TimeStamp) == false)
-                            context.MovingAverageConvergenceDivergences.Add(movingAverageConvergenceDivergence);
-                        
-                    }
-                    context.SaveChanges();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                var transactionData =
+                    context.TransactionData.First(t => t.StockKey == 378 && t.TimeStamp == suggestion.TimeStamp);
+                var macd = context.MovingAverageConvergenceDivergences.First(m => m.StockKey == 378 && m.TimeStamp == suggestion.TimeStamp);
+                var channel20 = context.Channels.First(c => c.StockKey == 378 && c.EndDate == suggestion.TimeStamp && c.Length == 20);
+                var channel50 = context.Channels.First(c => c.StockKey == 378 && c.EndDate == suggestion.TimeStamp && c.Length == 50);
+                var channel100 = context.Channels.First(c => c.StockKey == 378 && c.EndDate == suggestion.TimeStamp && c.Length == 100);
+                Console.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}", suggestion.TimeStamp, suggestion.SuggestedAction, suggestion.SuggestedTerm, macd.Histogram, suggestion.SuggestedPrice, transactionData.Close, channel20.ChannelTrend, channel50.ChannelTrend, channel100.ChannelTrend);
             }
+        }
+
+        [TestMethod]
+        public void RerunAnalyzer()
+        {
+            StockContext context = new StockContext();
+            MACDSuggestionAnalyzer suggestionAnalyzer = new MACDSuggestionAnalyzer();
+            var transactionData =
+                context.TransactionData.Where(t => t.StockKey == 378 && t.TimeStamp <= new DateTime(2011, 12, 1))
+                    .OrderBy(t => t.TimeStamp)
+                    .ToList();
+            var result = suggestionAnalyzer.CalculateForecaseCertainty(transactionData);
         }
 
         [TestMethod]
@@ -1180,10 +1166,9 @@ namespace Market.TestFixture
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             MACDSuggestionAnalyzer suggestionAnalyzer = new MACDSuggestionAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            Suggestion previousSuggestion = null;
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 199)
+                if (stock.Key != 378)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
@@ -1265,12 +1250,8 @@ namespace Market.TestFixture
                             suggestion.SuggestedAction = suggestionAnalyzer.Action;
                             suggestion.SuggestedTerm = suggestionAnalyzer.Term;
                             suggestion.SuggestedPrice = suggestionAnalyzer.Price;
-                            if (previousSuggestion == null || previousSuggestion.SuggestedAction != suggestion.SuggestedAction || previousSuggestion.SuggestedTerm != suggestion.SuggestedTerm)
-                            {
-                                context.Suggestions.Add(suggestion);
-                                context.SaveChanges();
-                                previousSuggestion = suggestion;
-                            }
+                            context.Suggestions.Add(suggestion);
+                            context.SaveChanges();
                         }
                     }
                     catch (Exception ex)

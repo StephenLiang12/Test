@@ -275,4 +275,30 @@ if (exists (select c.name from sysobjects o
 					and c.name = 'SellDate'))
 	alter table TransactionSimulator drop column SellDate
 
+--set unique constraints on StockKey and TimeStamp column on MovingAverageConvergenceDivergence
+if (not exists (select i.* from sysobjects o
+                    inner join sys.indexes i on o.id = i.object_id
+                    where o.name = 'MovingAverageConvergenceDivergence'
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'StockKey')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'TimeStamp')))
+    alter table MovingAverageConvergenceDivergence add unique (StockKey, TimeStamp)
+
+--set unique constraints on StockKey, StartDate and Length column on Channel
+if (not exists (select i.* from sysobjects o
+                    inner join sys.indexes i on o.id = i.object_id
+                    where o.name = 'Channel'
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'StockKey')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'StartDate')
+                      and exists (select ic.* from sys.index_columns ic 
+                                    inner join sys.columns c on ic.object_id = c.object_id and ic.column_id = c.column_id
+                                    where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'Length')))
+    alter table Channel add unique (StockKey, StartDate, Length)
 
