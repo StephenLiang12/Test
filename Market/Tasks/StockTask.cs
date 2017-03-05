@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -148,14 +149,12 @@ namespace Market.Tasks
             StockContext context = new StockContext();
             IList<int> splits = context.Splits.Select(s => s.StockKey).Distinct().ToList();
             foreach (int stockKey in splits)
+            //var stockKey = 479;
             {
                 RegenerateTransactionDataFromOriginalData(stockKey);
                 context.Database.ExecuteSqlCommand("delete from MovingAverageConvergenceDivergence where StockKey = " + stockKey);
                 context.Database.ExecuteSqlCommand("delete from Channel where StockKey = " + stockKey);
                 CalculateMovingAverageConvergenceDivergence(stockKey);
-                AnalyzeTrendChannel(stockKey, 20);
-                AnalyzeTrendChannel(stockKey, 50);
-                AnalyzeTrendChannel(stockKey, 100);
             }
         }
         public void RegenerateTransactionDataFromOriginalData(int stockKey)
@@ -166,11 +165,11 @@ namespace Market.Tasks
             {
                 context.TransactionData.Add(source.GetTransactionData());
             }
+            context.SaveChanges();
             foreach (var split in context.Splits.Where(s => s.StockKey == stockKey).OrderBy(s => s.TimeStamp))
             {
-                ApplySplitOnTransactionData(context, stockKey, split);
+                ApplySplitOnTransactionData(stockKey, split);
             }
-            context.SaveChanges();
         }
 
         public void CalculateMovingAverageConvergenceDivergence()
@@ -213,6 +212,7 @@ namespace Market.Tasks
                 AnalyzeTrendChannel(stock.Key, 20);
                 AnalyzeTrendChannel(stock.Key, 50);
                 AnalyzeTrendChannel(stock.Key, 100);
+                AnalyzeTrendChannel(stock.Key, 200);
             }
         }
 
@@ -220,13 +220,14 @@ namespace Market.Tasks
         {
             try
             {
-
                 StockContext updateContext = new StockContext();
                 IList<TransactionData> orderedList =
                     updateContext.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp).ToList();
                 var partialList = orderedList.GetFrontPartial(length);
                 for (int i = length; i <= orderedList.Count; i++)
                 {
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
                     var timeStamp = partialList[0].TimeStamp;
                     if (updateContext.Channels.Any(c => c.StockKey == stockKey && c.StartDate == timeStamp && c.Length == length) == false)
                     {
@@ -240,6 +241,8 @@ namespace Market.Tasks
                         partialList.RemoveAt(0);
                         partialList.Add(orderedList[i]);
                     }
+                    stopwatch.Stop();
+                    Console.WriteLine("Calculate {0} length channel {1} seconds.", length, stopwatch.Elapsed.TotalSeconds);
                 }
                 orderedList.Clear();
                 partialList.Clear();
@@ -292,7 +295,7 @@ namespace Market.Tasks
                     if (context.Splits.Any(s => s.StockKey == stock.Key && s.TimeStamp == splitTimeStamp))
                         continue;
                     context.Splits.Add(split);
-                    ApplySplitOnTransactionData(context, stock.Key, split);
+                    ApplySplitOnTransactionData(stock.Key, split);
                     split.Applied = true;
                 }
                 context.SaveChanges();
@@ -302,8 +305,9 @@ namespace Market.Tasks
             return statusCode;
         }
 
-        private void ApplySplitOnTransactionData(StockContext context, int stockKey, Split split)
+        private void ApplySplitOnTransactionData(int stockKey, Split split)
         {
+            var context = new StockContext();
             foreach (
                 var transaction in context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp < split.TimeStamp))
             {
@@ -312,6 +316,7 @@ namespace Market.Tasks
                 transaction.High /= split.SplitRatio;
                 transaction.Low /= split.SplitRatio;
             }
+            context.SaveChanges();
         }
     }
 }

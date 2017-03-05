@@ -24,6 +24,7 @@ namespace Market.Presentation
         private const int TransactionLinePixel = 10;
 
         private IList<UIElement> drawingElements = new List<UIElement>();
+        private IList<UIElement> days200DrawingElements = new List<UIElement>();
         private IList<UIElement> days100DrawingElements = new List<UIElement>();
         private IList<UIElement> days50DrawingElements = new List<UIElement>();
         private IList<UIElement> days20DrawingElements = new List<UIElement>();
@@ -179,7 +180,10 @@ namespace Market.Presentation
             {
                 TextBox textBox = new TextBox();
                 dateTimeLabels.Add(orderedTransactionList[i].TimeStamp);
-                textBox.Text = orderedTransactionList[i].TimeStamp.ToString("MM-dd");
+                if (dateTimeLabelIncrement >= 30)
+                    textBox.Text = orderedTransactionList[i].TimeStamp.ToString("YY-MM");
+                else
+                    textBox.Text = orderedTransactionList[i].TimeStamp.ToString("MM-dd");
                 textBox.FontSize = 10;
                 textBox.BorderThickness = new Thickness(0);
                 var x = (j + 1)*XLabelPixel + X0Pixel;
@@ -324,6 +328,26 @@ namespace Market.Presentation
             return previousX;
         }
 
+        private void Days200TrendingCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (StockComboBox.SelectedValue == null)
+                return;
+
+            if (StartDateComboBox.SelectedValue == null)
+                return;
+            var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
+            var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
+            var endDate = stockContext.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+            if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
+                endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
+            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 200))
+            {
+                DrawChannelSupportLine(channel, days200DrawingElements);
+                DrawChannelResistanceLine(channel, days200DrawingElements);
+            }
+            
+        }
+
         private void Days100TrendingCheckBox_OnChecked(object sender, RoutedEventArgs e)
         {
             if (StockComboBox.SelectedValue == null)
@@ -384,6 +408,15 @@ namespace Market.Presentation
             line.Y2 = y2;
             ChartCanvas.Children.Add(line);
             drawingElements.Add(line);
+        }
+
+        private void Days200TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (var drawingElement in days200DrawingElements)
+            {
+                ChartCanvas.Children.Remove(drawingElement);
+            }
+            days200DrawingElements.Clear();
         }
 
         private void Days100TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)

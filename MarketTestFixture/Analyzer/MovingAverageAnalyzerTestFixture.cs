@@ -63,8 +63,7 @@ namespace Market.TestFixture.Analyzer
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             double[] data = new[]
             {
-                10, 9.98, 10.02, 10.08, 10.05, 10.12, 10.2, 10.18, 10.22, 10.26, 10.27, 10.25, 10.20, 10.18, 10.16, 10.13,
-                10.11, 10.04, 10.03, 10.06
+                10, 9.98, 10.02, 10.08, 10.05, 10.12, 10.2, 10.18, 10.22, 10.26, 10.27, 10.25, 10.20, 10.18, 10.16, 10.13, 10.11, 10.04, 10.03, 10.06
             };
             var trend = analyzer.AnalyzeMovingTrend(data);
             Assert.AreEqual(Trend.Top, trend);
@@ -76,8 +75,7 @@ namespace Market.TestFixture.Analyzer
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             double[] data = new[]
             {
-                10, 9.98, 10.02, 10.08, 10.15, 10.12, 10.2, 10.28, 10.32, 10.36, 10.37, 10.45, 10.36, 10.38, 10.31, 10.3,
-                10.31, 10.34, 10.3, 10.28
+                10, 9.98, 10.02, 10.08, 10.15, 10.12, 10.2, 10.28, 10.32, 10.36, 10.37, 10.45, 10.36, 10.38, 10.31, 10.3, 10.31, 10.34, 10.3, 10.28
             };
             var trend = analyzer.AnalyzeMovingTrend(data);
             Assert.AreEqual(Trend.TopUp, trend);
@@ -89,11 +87,10 @@ namespace Market.TestFixture.Analyzer
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             double[] data = new[]
             {
-                10, 9.98, 10.02, 10.08, 10.15, 10.12, 10.2, 10.28, 10.32, 10.36, 10.37, 10.45, 10.36, 10.38, 10.31, 10.3,
-                10.31, 10.34, 10.3, 10.32
+                10, 9.98, 10.12, 9.08, 10.15, 10.12, 10.2, 10.08, 9.78, 9.96, 10.07, 10.23, 10.36, 10.38, 10.31, 10.2, 10.11, 9.94, 10.13, 10.22
             };
             var trend = analyzer.AnalyzeMovingTrend(data);
-            Assert.AreEqual(Trend.TopUp, trend);
+            Assert.AreEqual(Trend.VibrationUp, trend);
         }
 
     }

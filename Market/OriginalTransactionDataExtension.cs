@@ -12,7 +12,8 @@
                 Open = source.Open,
                 Close = source.Close,
                 High = source.High,
-                Low = source.Low
+                Low = source.Low,
+                Volume = source.Volume
             };
             return d;
         }

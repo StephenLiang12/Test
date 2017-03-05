@@ -331,7 +331,7 @@ namespace Market.TestFixture
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.AbleToGetTransactionDataFromWeb == false || stock.Key != 369)
+                if (stock.AbleToGetTransactionDataFromWeb == false || stock.Key != 258)
                     continue;
                 //var stock = context.Stocks.First(s => s.Id == "TRP.TO");
                 IList<TransactionData> orderedList =
@@ -760,12 +760,14 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
+            MovingAverageConvergenceDivergenceAnalyzer movingAverageConvergenceDivergenceAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
+            MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             IList<ISuggestionAnalyzer> analyzers = new List<ISuggestionAnalyzer>();
-            analyzers.Add(new ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer());
-            analyzers.Add(new LongTermBuyAfterLongTermPrepareSuggestionAnalyzer());
+            //analyzers.Add(new ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer());
+            //analyzers.Add(new LongTermBuyAfterLongTermPrepareSuggestionAnalyzer());
+            analyzers.Add(macdSuggestionAnalyzer);
 
             foreach (var stock in context.Stocks.ToList())
             {
@@ -777,45 +779,45 @@ namespace Market.TestFixture
                     IList<TransactionData> orderedList =
                                 context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                     int count = orderedList.Count;
-                    MovingAverage avg5 = new MovingAverage();
-                    avg5.NumberOfTransactions = 5;
-                    avg5.Averages = new double[orderedList.Count];
-                    MovingAverage avg10 = new MovingAverage();
-                    avg10.NumberOfTransactions = 10;
-                    avg10.Averages = new double[orderedList.Count];
-                    MovingAverage avg20 = new MovingAverage();
-                    avg20.NumberOfTransactions = 20;
-                    avg20.Averages = new double[orderedList.Count];
-                    MovingAverage avg50 = new MovingAverage();
-                    avg50.NumberOfTransactions = 50;
-                    avg50.Averages = new double[orderedList.Count];
-                    MovingAverage avg100 = new MovingAverage();
-                    avg100.NumberOfTransactions = 100;
-                    avg100.Averages = new double[orderedList.Count];
-                    MovingAverage avg200 = new MovingAverage();
-                    avg200.NumberOfTransactions = 200;
-                    avg200.Averages = new double[orderedList.Count];
-                    for (int i = 0; i < orderedList.Count; i++)
-                    {
-                        avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                        avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                        avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                        avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                        avg100.Averages[i] = orderedList[i].SimpleAvg100;
-                        avg200.Averages[i] = orderedList[i].SimpleAvg200;
-                    }
-                    var partialMovingTrend5 = analyzer.AnalyzeMovingTrend(avg5);
-                    var partialPattern = candleStickPatternAnalyzer.GetPattern(orderedList, partialMovingTrend5);
-                    double priceMovingAvg5 = analyzer.PriceCompareAverage(orderedList, avg5);
-                    double priceMovingAvg20 = analyzer.PriceCompareAverage(orderedList, avg20);
-                    double priceMovingAvg200 = analyzer.PriceCompareAverage(orderedList, avg200);
-                    double movingAvg5_20 = analyzer.AverageCrossOver(avg5, avg20);
-                    double movingAvg50_200 = analyzer.AverageCrossOver(avg50, avg200);
-                    var movingTrend10 = analyzer.AnalyzeMovingTrend(avg10);
-                    var movingTrend20 = analyzer.AnalyzeMovingTrend(avg20);
-                    var movingTrend50 = analyzer.AnalyzeMovingTrend(avg50);
-                    var movingTrend200 = analyzer.AnalyzeMovingTrend(avg200);
-                    var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(orderedList, avg10, avg20, 8);
+                    //MovingAverage avg5 = new MovingAverage();
+                    //avg5.NumberOfTransactions = 5;
+                    //avg5.Averages = new double[orderedList.Count];
+                    //MovingAverage avg10 = new MovingAverage();
+                    //avg10.NumberOfTransactions = 10;
+                    //avg10.Averages = new double[orderedList.Count];
+                    //MovingAverage avg20 = new MovingAverage();
+                    //avg20.NumberOfTransactions = 20;
+                    //avg20.Averages = new double[orderedList.Count];
+                    //MovingAverage avg50 = new MovingAverage();
+                    //avg50.NumberOfTransactions = 50;
+                    //avg50.Averages = new double[orderedList.Count];
+                    //MovingAverage avg100 = new MovingAverage();
+                    //avg100.NumberOfTransactions = 100;
+                    //avg100.Averages = new double[orderedList.Count];
+                    //MovingAverage avg200 = new MovingAverage();
+                    //avg200.NumberOfTransactions = 200;
+                    //avg200.Averages = new double[orderedList.Count];
+                    //for (int i = 0; i < orderedList.Count; i++)
+                    //{
+                    //    avg5.Averages[i] = orderedList[i].SimpleAvg5;
+                    //    avg10.Averages[i] = orderedList[i].SimpleAvg10;
+                    //    avg20.Averages[i] = orderedList[i].SimpleAvg20;
+                    //    avg50.Averages[i] = orderedList[i].SimpleAvg50;
+                    //    avg100.Averages[i] = orderedList[i].SimpleAvg100;
+                    //    avg200.Averages[i] = orderedList[i].SimpleAvg200;
+                    //}
+                    //var partialMovingTrend5 = analyzer.AnalyzeMovingTrend(avg5);
+                    //var partialPattern = candleStickPatternAnalyzer.GetPattern(orderedList, partialMovingTrend5);
+                    //double priceMovingAvg5 = analyzer.PriceCompareAverage(orderedList, avg5);
+                    //double priceMovingAvg20 = analyzer.PriceCompareAverage(orderedList, avg20);
+                    //double priceMovingAvg200 = analyzer.PriceCompareAverage(orderedList, avg200);
+                    //double movingAvg5_20 = analyzer.AverageCrossOver(avg5, avg20);
+                    //double movingAvg50_200 = analyzer.AverageCrossOver(avg50, avg200);
+                    //var movingTrend10 = analyzer.AnalyzeMovingTrend(avg10);
+                    //var movingTrend20 = analyzer.AnalyzeMovingTrend(avg20);
+                    //var movingTrend50 = analyzer.AnalyzeMovingTrend(avg50);
+                    //var movingTrend200 = analyzer.AnalyzeMovingTrend(avg200);
+                    //var signalLineCrossOver10_20_6 = movingAverageConvergenceDivergenceAnalyzer.AnalyzeSignalLineCrossOver(orderedList, avg10, avg20, 8);
                     foreach (var suggestionAnalyzer in analyzers)
                     {
                         if (suggestionAnalyzer.CalculateForecaseCertainty(orderedList) > 0)
@@ -827,25 +829,35 @@ namespace Market.TestFixture
                             suggestion.StockName = stock.Name;
                             suggestion.ClosePrice = orderedList[count - 1].Close;
                             suggestion.Volume = orderedList[count - 1].Volume;
-                            suggestion.CandleStickPattern = partialPattern.Name;
-                            suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
-                            suggestion.Avg5Trend = partialMovingTrend5;
-                            suggestion.Avg20Trend = movingTrend20;
-                            suggestion.Avg200Trend = movingTrend200;
-                            suggestion.PriceVsAvg5 = priceMovingAvg5;
-                            suggestion.PriceVsAvg200 = priceMovingAvg200;
-                            suggestion.Avg5VsAvg20 = movingAvg5_20;
-                            suggestion.Avg50VsAvg200 = movingAvg50_200;
+                            suggestion.CandleStickPattern = "Unknown";
+                            //suggestion.CandleStickPattern = partialPattern.Name;
+                            //suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
+                            //suggestion.Avg5Trend = partialMovingTrend5;
+                            //suggestion.Avg20Trend = movingTrend20;
+                            //suggestion.Avg200Trend = movingTrend200;
+                            //suggestion.PriceVsAvg5 = priceMovingAvg5;
+                            //suggestion.PriceVsAvg200 = priceMovingAvg200;
+                            //suggestion.Avg5VsAvg20 = movingAvg5_20;
+                            //suggestion.Avg50VsAvg200 = movingAvg50_200;
                             suggestion.AnalyzerName = suggestionAnalyzer.Name;
                             suggestion.SuggestedTerm = suggestionAnalyzer.Term;
                             suggestion.SuggestedAction = suggestionAnalyzer.Action;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
+                            if (context.Suggestions.Any(
+                                    s =>
+                                        s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
+                                        s.AnalyzerName == suggestion.AnalyzerName &&
+                                        s.SuggestedAction == suggestion.SuggestedAction &&
+                                        s.SuggestedTerm == suggestion.SuggestedTerm) == false)
+                            {
+                                context.Suggestions.Add(suggestion);
+                                context.SaveChanges();
+                            }
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex.Message);
                 }
             }
         }
@@ -854,16 +866,18 @@ namespace Market.TestFixture
         public void AbleToCalculateChannel()
         {
             StockContext context = new StockContext();
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (context.OriginalTransactionData.Where(t => t.StockKey == stock.Key).Count() > 100)
-                {
-                    StockTask stockTask = new StockTask();
-                    stockTask.AnalyzeTrendChannel(stock.Key, 20);
-                    stockTask.AnalyzeTrendChannel(stock.Key, 50);
-                    stockTask.AnalyzeTrendChannel(stock.Key, 100);
-                }
-            }
+            StockTask stockTask = new StockTask();
+            stockTask.AnalyzeTrendChannel(168, 100);
+            //foreach (var stock in context.Stocks.ToList())
+            //{
+            //    if (context.OriginalTransactionData.Where(t => t.StockKey == stock.Key).Count() > 100)
+            //    {
+            //        StockTask stockTask = new StockTask();
+            //        stockTask.AnalyzeTrendChannel(stock.Key, 20);
+            //        stockTask.AnalyzeTrendChannel(stock.Key, 50);
+            //        stockTask.AnalyzeTrendChannel(stock.Key, 100);
+            //    }
+            //}
         }
 
 
@@ -878,7 +892,7 @@ namespace Market.TestFixture
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 199)
+                if (stock.Key != 258)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
@@ -979,8 +993,9 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             SortedList<DateTime, Suggestion> suggestionSortedList = new SortedList<DateTime, Suggestion>();
-            int stockKey = 378;
+            int stockKey = 946;
             double expectedAmmount = 10000;
+            double existPercentage = 10;
             foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey && s.AnalyzerName.Contains("Moving")))
             {
                 if (suggestionSortedList.ContainsKey(suggestion.TimeStamp) == false)
@@ -991,6 +1006,7 @@ namespace Market.TestFixture
             availableVolume.Add(Term.Short, 0);
             availableVolume.Add(Term.Intermediate, 0);
             availableVolume.Add(Term.Long, 0);
+            double holdingValue = 0;
             foreach (var pair in suggestionSortedList)
             {
                 if (pair.Value.SuggestedAction == Action.Buy)
@@ -1019,21 +1035,28 @@ namespace Market.TestFixture
                         transactionSimulator.Volume = Convert.ToInt32(expectedAmmount/transactionSimulator.Price);
                         availableVolume[pair.Value.SuggestedTerm] += transactionSimulator.Volume;
                         transactionSimulators.Add(transactionSimulator);
+                        holdingValue += expectedAmmount;
                     }
                 }
                 else if (pair.Value.SuggestedAction == Action.Sell)
                 {
                     if (availableVolume.Sum(a => a.Value) == 0)
                         continue;
-
+                    double holdingPrice = holdingValue/availableVolume.Sum(a => a.Value);
+                    var closePrice = pair.Value.ClosePrice;
+                    var exists = (holdingPrice - closePrice)/holdingPrice*100 > existPercentage;
+                    //if (pair.Value.SuggestedTerm == Term.Short && holdingPrice > closePrice && exists == false)
+                    //    continue;
                     var timeStamp = pair.Key.AddDays(1);
                     if (context.TransactionData.Any(t => t.StockKey == stockKey && t.TimeStamp >= timeStamp))
                     {
-                        while (context.TransactionData.Any(t => t.StockKey == stockKey && t.TimeStamp == timeStamp) == false)
+                        while (context.TransactionData.Any(t => t.StockKey == stockKey && t.TimeStamp == timeStamp) ==
+                               false)
                         {
                             timeStamp = timeStamp.AddDays(1);
                         }
-                        var transaction = context.TransactionData.First(t => t.StockKey == stockKey && t.TimeStamp == timeStamp);
+                        var transaction =
+                            context.TransactionData.First(t => t.StockKey == stockKey && t.TimeStamp == timeStamp);
                         var transactionSimulator = new TransactionSimulator();
                         transactionSimulator.StockKey = stockKey;
                         transactionSimulator.SuggestionKey = pair.Value.Key;
@@ -1047,44 +1070,56 @@ namespace Market.TestFixture
                             transactionSimulator.Price = transaction.Open;
                         else
                             transactionSimulator.Price = pair.Value.SuggestedPrice.Value;
-                        int suggestedVolume = Convert.ToInt32(expectedAmmount / transactionSimulator.Price);
-                        if (availableVolume[Term.Short] > suggestedVolume)
+                        int suggestedVolume = Convert.ToInt32(expectedAmmount/transactionSimulator.Price);
+                        if (exists)
                         {
+                            suggestedVolume = availableVolume.Sum(a => a.Value);
                             transactionSimulator.Volume = suggestedVolume;
-                            availableVolume[Term.Short] -= suggestedVolume;
+                            availableVolume[Term.Short] = 0;
+                            availableVolume[Term.Intermediate] = 0;
+                            availableVolume[Term.Long] = 0;
                         }
                         else
                         {
-                            suggestedVolume = (suggestedVolume - availableVolume[Term.Short]);
-                            if (pair.Value.SuggestedTerm == Term.Short)
-                                suggestedVolume = suggestedVolume/2;
-                            transactionSimulator.Volume = availableVolume[Term.Short];
-                            availableVolume[Term.Short] = 0;
-                            if (availableVolume[Term.Intermediate] > suggestedVolume)
+                            if (availableVolume[Term.Short] > suggestedVolume)
                             {
-                                transactionSimulator.Volume += suggestedVolume;
-                                availableVolume[Term.Intermediate] -= suggestedVolume;
+                                transactionSimulator.Volume = suggestedVolume;
+                                availableVolume[Term.Short] -= suggestedVolume;
                             }
                             else
                             {
-                                suggestedVolume = (suggestedVolume - availableVolume[Term.Intermediate]);
-                                if (pair.Value.SuggestedTerm != Term.Long)
+                                suggestedVolume = (suggestedVolume - availableVolume[Term.Short]);
+                                if (pair.Value.SuggestedTerm == Term.Short)
                                     suggestedVolume = suggestedVolume/2;
-                                    transactionSimulator.Volume += availableVolume[Term.Intermediate];
-                                availableVolume[Term.Intermediate] = 0;
-                                if (availableVolume[Term.Long] > suggestedVolume)
+                                transactionSimulator.Volume = availableVolume[Term.Short];
+                                availableVolume[Term.Short] = 0;
+                                if (availableVolume[Term.Intermediate] > suggestedVolume)
                                 {
                                     transactionSimulator.Volume += suggestedVolume;
-                                    availableVolume[Term.Long] -= suggestedVolume;
+                                    availableVolume[Term.Intermediate] -= suggestedVolume;
                                 }
                                 else
                                 {
-                                    transactionSimulator.Volume += availableVolume[Term.Long];
-                                    availableVolume[Term.Long] = 0;
+                                    suggestedVolume = (suggestedVolume - availableVolume[Term.Intermediate]);
+                                    if (pair.Value.SuggestedTerm != Term.Long)
+                                        suggestedVolume = suggestedVolume/2;
+                                    transactionSimulator.Volume += availableVolume[Term.Intermediate];
+                                    availableVolume[Term.Intermediate] = 0;
+                                    if (availableVolume[Term.Long] > suggestedVolume)
+                                    {
+                                        transactionSimulator.Volume += suggestedVolume;
+                                        availableVolume[Term.Long] -= suggestedVolume;
+                                    }
+                                    else
+                                    {
+                                        transactionSimulator.Volume += availableVolume[Term.Long];
+                                        availableVolume[Term.Long] = 0;
+                                    }
                                 }
                             }
                         }
                         transactionSimulators.Add(transactionSimulator);
+                        holdingValue = holdingPrice*availableVolume.Sum(a => a.Value);
                     }
                 }
             }
@@ -1151,7 +1186,7 @@ namespace Market.TestFixture
             StockContext context = new StockContext();
             MACDSuggestionAnalyzer suggestionAnalyzer = new MACDSuggestionAnalyzer();
             var transactionData =
-                context.TransactionData.Where(t => t.StockKey == 378 && t.TimeStamp <= new DateTime(2011, 12, 1))
+                context.TransactionData.Where(t => t.StockKey == 946 && t.TimeStamp <= new DateTime(2014, 08, 26))
                     .OrderBy(t => t.TimeStamp)
                     .ToList();
             var result = suggestionAnalyzer.CalculateForecaseCertainty(transactionData);
@@ -1168,7 +1203,7 @@ namespace Market.TestFixture
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 378)
+                if (stock.Key != 946)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();

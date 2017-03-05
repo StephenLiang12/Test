@@ -6,7 +6,7 @@ namespace Market.Analyzer
 {
     public class MovingAverageAnalyzer
     {
-        private const double Threshold = 0.25;
+        private const double Threshold = 0.1;
 
         public double PriceCompareAverage(IList<TransactionData> orderedTransactions, MovingAverage average)
         {
@@ -181,25 +181,40 @@ namespace Market.Analyzer
             double percentAboveLine = (double)dotAboveLine/data.Length;
             double percentBelowLine = (double)dotBelowLine/data.Length;
             double percentAroundLine = (double)dotAroundLine/data.Length;
+            double percentCrossLine = (double) crossLine/data.Length;
+            var hasTop = HasTop(open, high, highIndex, variancePercent, ratio, percentCrossLine);
+            var hasBottom = HasBottom(open, low, lowIndex, variancePercent, ratio, percentCrossLine);
             if (Math.Abs(changePercent) > variancePercent)
             {
-                if (IsTop(open, close, low, lowIndex, high, highIndex, variancePercent, ratio))
-                {
-                    if (changePercent > 0)
-                        return Trend.TopUp;
-                    return Trend.TopDown;
-                }
-                if (IsBottom(open, close, low, lowIndex, high, highIndex, variancePercent, ratio))
-                {
-                    if (changePercent > 0)
-                        return Trend.BottomUp;
-                    return Trend.BottomDown;
-                }
-                if ((double) crossLine/data.Length > Threshold)
+                if (percentCrossLine > Threshold)
                 {
                     if (changePercent > 0)
                         return Trend.VibrationUp;
                     return Trend.VibrationDown;
+                }
+                if (hasTop)
+                {
+                    if (hasBottom)
+                    {
+                        if (changePercent > 0)
+                        {
+                            if (highIndex < lowIndex)
+                                return Trend.TopBottomUp;
+                            return Trend.BottomTopUp;
+                        }
+                        if (highIndex < lowIndex)
+                            return Trend.TopBottomDown;
+                        return Trend.BottomTopDown;
+                    }
+                    if (changePercent > 0)
+                        return Trend.TopUp;
+                    return Trend.TopDown;
+                }
+                if (hasBottom)
+                {
+                    if (changePercent > 0)
+                        return Trend.BottomUp;
+                    return Trend.BottomDown;
                 }
                 if (changePercent > 0)
                     return Trend.Up;
@@ -207,39 +222,27 @@ namespace Market.Analyzer
             }
             if (percentAroundLine > 0.8)
                 return Trend.Vibration;
-            if (percentAboveLine > 0.5 && IsTop(open, close, low, lowIndex, high, highIndex, variancePercent, ratio))
+            if (percentAboveLine > 0.5 && hasTop && !hasBottom)
                 return Trend.Top;
-            if (percentBelowLine > 0.5 && IsBottom(open, close, low, lowIndex, high, highIndex, variancePercent, ratio))
+            if (percentBelowLine > 0.5 && hasBottom && !hasTop)
                 return Trend.Bottom;
-            return Trend.Vibration;
+            if (percentCrossLine > Threshold)
+                return Trend.Vibration;
+            return Trend.Unknown;
         }
 
-        private bool IsTop(double open, double close, double low, int lowIndex, double high, int highIndex, double variancePercent, double changeRatio)
+        private bool HasTop(double open, double high, int highIndex, double variancePercent, double changeRatio, double crossLinePercentage)
         {
-            double highVsOpen = (high - open)/open;
-            double highVsClose = (high - close)/close;
             double highLine = open + highIndex*changeRatio;
             double highVsLine = (high - highLine)/highLine;
-            double lowLine = open + lowIndex*changeRatio;
-            double lowVsLine = (lowLine - low)/lowLine;
-            //return highVsOpen > variancePercent * Threshold &&
-            //    highVsClose > variancePercent * Threshold &&
-            return      highVsLine > variancePercent &&
-                  lowVsLine < variancePercent * Threshold;
+            return crossLinePercentage < variancePercent && highVsLine > variancePercent ;
         }
 
-        private bool IsBottom(double open, double close, double low, int lowIndex, double high, int highIndex, double variancePercent, double changeRatio)
+        private bool HasBottom(double open, double low, int lowIndex, double variancePercent, double changeRatio, double crossLinePercentage)
         {
-            double lowVsOpen = (open - low) / open;
-            double lowVsClose = (close - low) / close;
-            double highLine = open + highIndex * changeRatio;
-            double highVsLine = (high - highLine) / highLine;
             double lowLine = open + lowIndex * changeRatio;
             double lowVsLine = (lowLine - low) / lowLine;
-            //return lowVsOpen > variancePercent * Threshold &&
-            //    lowVsClose > variancePercent * Threshold &&
-            return      lowVsLine > variancePercent &&
-                  highVsLine < variancePercent * Threshold;
+            return crossLinePercentage < variancePercent && lowVsLine > variancePercent ;
         }
     }
 }
