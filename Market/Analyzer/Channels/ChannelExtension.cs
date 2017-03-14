@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Market.Analyzer.Channels
 {
@@ -37,6 +36,30 @@ namespace Market.Analyzer.Channels
             return (count - outOfCoverage)/count;
         }
 
+        public static int GetSupportSign(this Channel channel)
+        {
+            double abs = Math.Abs(channel.SupportChannelRatio/channel.SupportStartPrice*200);
+            if (abs > 0.1)
+            {
+                if (channel.SupportChannelRatio > 0)
+                    return 1;
+                return -1;
+            }
+            return 0;
+        }
+
+        public static int GetResistanceSign(this Channel channel)
+        {
+            double abs = Math.Abs(channel.ResistanceChannelRatio/channel.ResistanceStartPrice*200);
+            if (abs > 0.1)
+            {
+                if (channel.ResistanceChannelRatio > 0)
+                    return 1;
+                return -1;
+            }
+            return 0;
+        }
+
         public static bool IsSupportStrong(this Channel channel, IList<TransactionData> orderedTransactions)
         {
             int count = 0;
@@ -45,7 +68,7 @@ namespace Market.Analyzer.Channels
             {
                 var supportPrice = channel.SupportStartPrice + channel.SupportChannelRatio*i;
                 var resistancePrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio*i;
-                if ((transactions[i].Low - supportPrice) / (resistancePrice - supportPrice) <= 0.1)
+                if ((transactions[i].Low - supportPrice) / (resistancePrice - supportPrice) <= 0.02)
                     count++;
             }
             return (count -2) * 25 >= channel.Length;
@@ -60,7 +83,7 @@ namespace Market.Analyzer.Channels
                 var gap = resistancePrice - supportPrice;
                 if (gap < 0.005)
                     return true;
-                var closeEnough = (orderedTransactions[orderedTransactions.Count - i - 1].Low - supportPrice) / gap <= 0.1;
+                var closeEnough = (orderedTransactions[orderedTransactions.Count - i - 1].Low - supportPrice) / gap <= 0.02;
                 if (closeEnough)
                     return true;
             }
@@ -75,7 +98,7 @@ namespace Market.Analyzer.Channels
             {
                 var supportPrice = channel.SupportStartPrice + channel.SupportChannelRatio * i;
                 var resistancePrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio * i;
-                if ((resistancePrice - transactions[i].High) /(resistancePrice - resistancePrice) <= 0.1)
+                if ((resistancePrice - transactions[i].High) /(resistancePrice - resistancePrice) <= 0.02)
                     count++;
             }
             return (count -2 ) * 25 > channel.Length;
@@ -90,7 +113,7 @@ namespace Market.Analyzer.Channels
                 var gap = resistancePrice - supportPrice;
                 if (gap < 0.005)
                     return true;
-                var closeEnough = (resistancePrice - orderedTransactions[orderedTransactions.Count - i - 1].High) / gap <= 0.1;
+                var closeEnough = (resistancePrice - orderedTransactions[orderedTransactions.Count - i - 1].High) / gap <= 0.02;
                 if (closeEnough)
                     return true;
             }
@@ -105,6 +128,58 @@ namespace Market.Analyzer.Channels
         public static bool IsDroping(this Channel channel)
         {
             return channel.SupportChannelRatio/channel.SupportStartPrice < -0.03;
+        }
+
+        public static bool BreakSupportLine(this Channel channel, IList<TransactionData> orderedTransactions, out int breakIndex)
+        {
+            int n = 0;
+            for (int i = orderedTransactions.Count - 1; i >=0; i--)
+            {
+                if (orderedTransactions[i].TimeStamp == channel.EndDate)
+                    n = i;
+            }
+            if (n == 0)
+            {
+                breakIndex = 0;
+                return false;
+            }
+            for (int i = n + 1; i < orderedTransactions.Count; i++)
+            {
+                var supportPrice = channel.SupportStartPrice + channel.SupportChannelRatio * (channel.Length + i - n);
+                if (orderedTransactions[i].High < supportPrice)
+                {
+                    breakIndex = i;
+                    return true;
+                }
+            }
+            breakIndex = 0;
+            return false;
+        }
+
+        public static bool BreakResistanceLine(this Channel channel, IList<TransactionData> orderedTransactions, out int breakIndex)
+        {
+            int n = 0;
+            for (int i = orderedTransactions.Count - 1; i >=0; i--)
+            {
+                if (orderedTransactions[i].TimeStamp == channel.EndDate)
+                    n = i;
+            }
+            if (n == 0)
+            {
+                breakIndex = 0;
+                return false;
+            }
+            for (int i = n + 1; i < orderedTransactions.Count; i++)
+            {
+                var resistancePrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio * (channel.Length + i - n);
+                if (orderedTransactions[i].Low > resistancePrice)
+                {
+                    breakIndex = i;
+                    return true;
+                }
+            }
+            breakIndex = 0;
+            return false;
         }
     }
 }

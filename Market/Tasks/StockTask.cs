@@ -318,5 +318,36 @@ namespace Market.Tasks
             }
             context.SaveChanges();
         }
+
+        public Channel GetChannel(int stockKey, int length, DateTime startTime, DateTime endTime)
+        {
+            var stockContext = new StockContext();
+            var trendChannelAnalyzer = new TrendChannelAnalyzer();
+            var channel =
+                stockContext.Channels.FirstOrDefault(c => c.StockKey == stockKey && c.Length == length && c.EndDate == endTime);
+            if (channel != null)
+                return channel;
+            IList<TransactionData> orderedList =
+                stockContext.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp >= startTime && t.TimeStamp <= endTime)
+                    .OrderBy(t => t.TimeStamp)
+                    .ToList();
+            var partialList = orderedList.GetRearPartial(length);
+            channel = trendChannelAnalyzer.AnalyzeTrendChannel(partialList);
+            stockContext.Channels.Add(channel);
+            stockContext.SaveChanges();
+            return channel;
+        }
+
+        public Channel GetPreviousChannel(int stockKey, int length, DateTime endTime)
+        {
+            var stockContext = new StockContext();
+            var channels = stockContext.Channels.Where(c => c.StockKey == stockKey && c.Length == length && c.EndDate < endTime).ToList();
+            if (channels.Count > 0)
+            {
+                var maxDate = channels.Max(c => c.EndDate);
+                return channels.First(c => c.EndDate == maxDate);
+            }
+            return null;
+        }
     }
 }

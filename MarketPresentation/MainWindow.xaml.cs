@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Market.Analyzer;
 using Market.Analyzer.Channels;
 
 namespace Market.Presentation
@@ -17,13 +18,16 @@ namespace Market.Presentation
         private readonly StockContext stockContext = new StockContext();
         private const int X0Pixel = 30;
         private const int Y0Pixel = 30;
-        private const int XLengPixel = 900;
-        private const int YLengPixel = 500;
+        private const int XLengthPixel = 1500;
+        private const int YLengthPixel = 500;
+        private const int macdLengthPixel = 160;
         private const int XLabelPixel = 50;
         private const int YLabelPixel = 50;
+        private const int MacdLabelPixel = 40;
         private const int TransactionLinePixel = 10;
 
-        private IList<UIElement> drawingElements = new List<UIElement>();
+        private IList<UIElement> chartDrawingElements = new List<UIElement>();
+        private IList<UIElement> macdDrawingElements = new List<UIElement>();
         private IList<UIElement> days200DrawingElements = new List<UIElement>();
         private IList<UIElement> days100DrawingElements = new List<UIElement>();
         private IList<UIElement> days50DrawingElements = new List<UIElement>();
@@ -31,6 +35,7 @@ namespace Market.Presentation
         private Dictionary<DateTime, double> xPixelDictionary = new Dictionary<DateTime, double>();
         private double startPrice;
         private double priceIncrementPerLabel;
+        private double macdIncrementPerLabel;
 
         public MainWindow()
         {
@@ -75,11 +80,16 @@ namespace Market.Presentation
 
         private void SearchButton_OnClick(object sender, RoutedEventArgs e)
         {
-            foreach (var drawingElement in drawingElements)
+            foreach (var drawingElement in chartDrawingElements)
             {
                 ChartCanvas.Children.Remove(drawingElement);
             }
-            drawingElements.Clear();
+            chartDrawingElements.Clear();
+            foreach (var drawingElement in macdDrawingElements)
+            {
+                MacdCanvas.Children.Remove(drawingElement);
+            }
+            macdDrawingElements.Clear();
             xPixelDictionary.Clear();
             if (StockComboBox.SelectedValue == null)
                 return;
@@ -108,6 +118,19 @@ namespace Market.Presentation
             priceIncrementPerLabel = GetPriceIncrementPerLabel(diff);
             startPrice = GetStartPriceLabel(minPrice, priceIncrementPerLabel);
             AddPriceLabel(startPrice, priceIncrementPerLabel);
+            var macds = stockContext.MovingAverageConvergenceDivergences.Where(t => t.StockKey == stockKey && t.TimeStamp >= startDate && t.TimeStamp <= endDate);
+            double macdHeight =0;
+            foreach (var macd in macds)
+            {
+                if (macdHeight < Math.Abs(macd.MACD))
+                    macdHeight = Math.Abs(macd.MACD);
+                if (macdHeight < Math.Abs(macd.Signal))
+                    macdHeight = Math.Abs(macd.Signal);
+                if (macdHeight < Math.Abs(macd.Histogram))
+                    macdHeight = Math.Abs(macd.Histogram);
+            }
+            macdIncrementPerLabel = GetMacdIncrementPerLabel(macdHeight);
+            AddMacdLabel(macdIncrementPerLabel);
             var transactionIntervalPixel = TransactionLinePixel;
             var transactionPerDateTimeLabel = XLabelPixel/TransactionLinePixel;
             if (transactionsPerLine == 1)
@@ -119,15 +142,20 @@ namespace Market.Presentation
             int i = 0;
             int j = 0;
             int k = 0;
+            MovingAverageConvergenceDivergence previousMacd = null;
+            int previousX = 0;
+            int x = 0;
             while (i < orderedTransactionList.Count)
             {
-                var x = (j + 1) * XLabelPixel + k * transactionIntervalPixel + X0Pixel;
+                previousX = x;
+                x = (j + 1) * XLabelPixel + k * transactionIntervalPixel + X0Pixel;
                 xPixelDictionary.Add(orderedTransactionList[i].TimeStamp, x);
                 var open = orderedTransactionList[i].Open;
                 var endIndex = i + transactionsPerLine - 1;
                 if (endIndex >= orderedTransactionList.Count)
                     endIndex = orderedTransactionList.Count - 1;
                 var close = orderedTransactionList[endIndex].Close;
+                previousMacd = AddMovingAverageConvergenceDivergence(previousMacd, orderedTransactionList[endIndex], previousX, x);
                 var high = orderedTransactionList[i].High;
                 var low = orderedTransactionList[i].Low;
                 for (int n = i + 1; n <= endIndex; n++)
@@ -141,26 +169,26 @@ namespace Market.Presentation
                 line.Stroke = new SolidColorBrush(Colors.Black);
                 line.X1 = x;
                 line.X2 = x;
-                line.Y1 = GetYForPrice(startPrice, priceIncrementPerLabel, high);
-                line.Y2 = GetYForPrice(startPrice, priceIncrementPerLabel, low);
+                line.Y1 = GetYForPrice(high);
+                line.Y2 = GetYForPrice(low);
                 ChartCanvas.Children.Add(line);
-                drawingElements.Add(line);
+                chartDrawingElements.Add(line);
                 line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Black);
                 line.X1 = x - 3;
                 line.X2 = x;
-                line.Y1 = GetYForPrice(startPrice, priceIncrementPerLabel, open);
-                line.Y2 = GetYForPrice(startPrice, priceIncrementPerLabel, open);
+                line.Y1 = GetYForPrice(open);
+                line.Y2 = GetYForPrice(open);
                 ChartCanvas.Children.Add(line);
-                drawingElements.Add(line);
+                chartDrawingElements.Add(line);
                 line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Black);
                 line.X1 = x;
                 line.X2 = x + 3;
-                line.Y1 = GetYForPrice(startPrice, priceIncrementPerLabel, close);
-                line.Y2 = GetYForPrice(startPrice, priceIncrementPerLabel, close);
+                line.Y1 = GetYForPrice(close);
+                line.Y2 = GetYForPrice(close);
                 ChartCanvas.Children.Add(line);
-                drawingElements.Add(line);
+                chartDrawingElements.Add(line);
                 i += transactionsPerLine;
                 k++;
                 if (k == transactionPerDateTimeLabel)
@@ -169,6 +197,87 @@ namespace Market.Presentation
                     j++;
                 }
             }
+        }
+
+        private void AddMacdLabel(double macdIncrementPerLabel)
+        {
+            double macd = 0;
+            AddMacdLabel(macd, 0);
+            for (int i = 1; i < 5; i++)
+            {
+                AddMacdLabel(macd + i * macdIncrementPerLabel, i);
+                AddMacdLabel(macd - i * macdIncrementPerLabel, -i);
+                AddMaceLine(i);
+                AddMaceLine(-i);
+            }
+        }
+
+        private void AddMaceLine(int i)
+        {
+            Line line = new Line();
+            line.Stroke = new SolidColorBrush(Colors.Aquamarine);
+            line.X1 = ZeroLine.X1 - 3;
+            line.X2 = ZeroLine.X2;
+            line.Y1 = ZeroLine.Y1 + i*MacdLabelPixel;
+            line.Y2 = ZeroLine.Y1 + i*MacdLabelPixel;
+            MacdCanvas.Children.Add(line);
+            macdDrawingElements.Add(line);
+        }
+
+        private void AddMacdLabel(double macd, int index)
+        {
+            TextBox textBox = new TextBox();
+            textBox.Text = macd.ToString();
+            textBox.FontSize = 10;
+            textBox.BorderThickness = new Thickness(0);
+            Canvas.SetLeft(textBox, 0);
+            Canvas.SetBottom(textBox, ZeroLine.Y1 - 20 + index * MacdLabelPixel);
+            MacdCanvas.Children.Add(textBox);
+            macdDrawingElements.Add(textBox);
+        }
+
+        private double GetMacdIncrementPerLabel(double macdHeight)
+        {
+            int log = Convert.ToInt32(Math.Log10(macdHeight)) - 1;
+            int decimalPlaces = -log;
+            if (decimalPlaces < 0)
+                decimalPlaces = 0;
+            double increment = Math.Round(macdHeight/4, decimalPlaces) + Math.Pow(10, log);
+            return increment;
+        }
+
+        private MovingAverageConvergenceDivergence AddMovingAverageConvergenceDivergence(MovingAverageConvergenceDivergence previousMacd, TransactionData transactionData, int prevoiusX, int x)
+        {
+            MovingAverageConvergenceDivergence macd =
+                stockContext.MovingAverageConvergenceDivergences.FirstOrDefault(
+                    m => m.StockKey == transactionData.StockKey && m.TimeStamp == transactionData.TimeStamp);
+            if (previousMacd == null || macd == null)
+                return macd;
+            Line line = new Line();
+            line.Stroke = new SolidColorBrush(Colors.Blue);
+            line.X1 = prevoiusX;
+            line.X2 = x;
+            line.Y1 = GetYForMacd(previousMacd.MACD);
+            line.Y2 = GetYForMacd(macd.MACD);
+            MacdCanvas.Children.Add(line);
+            macdDrawingElements.Add(line);
+            line = new Line();
+            line.Stroke = new SolidColorBrush(Colors.Red);
+            line.X1 = prevoiusX;
+            line.X2 = x;
+            line.Y1 = GetYForMacd(previousMacd.Signal);
+            line.Y2 = GetYForMacd(macd.Signal);
+            MacdCanvas.Children.Add(line);
+            macdDrawingElements.Add(line);
+            line = new Line();
+            line.Stroke = new SolidColorBrush(Colors.Black);
+            line.X1 = prevoiusX;
+            line.X2 = x;
+            line.Y1 = GetYForMacd(previousMacd.Histogram);
+            line.Y2 = GetYForMacd(macd.Histogram);
+            MacdCanvas.Children.Add(line);
+            macdDrawingElements.Add(line);
+            return macd;
         }
 
         private DateTime[] AddDateTimeLabel(List<TransactionData> orderedTransactionList, int dateTimeLabelIncrement)
@@ -181,16 +290,16 @@ namespace Market.Presentation
                 TextBox textBox = new TextBox();
                 dateTimeLabels.Add(orderedTransactionList[i].TimeStamp);
                 if (dateTimeLabelIncrement >= 30)
-                    textBox.Text = orderedTransactionList[i].TimeStamp.ToString("YY-MM");
+                    textBox.Text = orderedTransactionList[i].TimeStamp.ToString("yy-MM");
                 else
                     textBox.Text = orderedTransactionList[i].TimeStamp.ToString("MM-dd");
                 textBox.FontSize = 10;
                 textBox.BorderThickness = new Thickness(0);
                 var x = (j + 1)*XLabelPixel + X0Pixel;
                 Canvas.SetLeft(textBox, x - 10);
-                Canvas.SetBottom(textBox, 0);
+                Canvas.SetBottom(textBox, YLabelPixel);
                 ChartCanvas.Children.Add(textBox);
-                drawingElements.Add(textBox);
+                chartDrawingElements.Add(textBox);
                 Line line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Aquamarine);
                 line.X1 = x;
@@ -198,7 +307,15 @@ namespace Market.Presentation
                 line.Y1 = DateLine.Y1 - 500;
                 line.Y2 = DateLine.Y1 + 3;
                 ChartCanvas.Children.Add(line);
-                drawingElements.Add(line);
+                chartDrawingElements.Add(line);
+                line = new Line();
+                line.Stroke = new SolidColorBrush(Colors.Aquamarine);
+                line.X1 = x;
+                line.X2 = x;
+                line.Y1 = StartLine.Y1;
+                line.Y2 = StartLine.Y2;
+                MacdCanvas.Children.Add(line);
+                chartDrawingElements.Add(line);
                 i += dateTimeLabelIncrement;
                 j++;
             }
@@ -207,7 +324,7 @@ namespace Market.Presentation
 
         private int GetTransactionPerLine(int count)
         {
-            int maxTransactionCount = XLengPixel/TransactionLinePixel;
+            int maxTransactionCount = XLengthPixel/TransactionLinePixel;
             return count/maxTransactionCount + 1;
         }
 
@@ -215,7 +332,7 @@ namespace Market.Presentation
         {
             if (transactionPerLine == 1)
             {
-                int maxDateTimeCount = XLengPixel/XLabelPixel;
+                int maxDateTimeCount = XLengthPixel/XLabelPixel;
                 return count/maxDateTimeCount + 1;
             }
             return transactionPerLine * XLabelPixel/TransactionLinePixel;
@@ -233,9 +350,9 @@ namespace Market.Presentation
                 textBox.FontSize = 10;
                 textBox.BorderThickness = new Thickness(0);
                 Canvas.SetLeft(textBox, 0);
-                Canvas.SetBottom(textBox, y);
+                Canvas.SetBottom(textBox, y + YLabelPixel);
                 ChartCanvas.Children.Add(textBox);
-                drawingElements.Add(textBox);
+                chartDrawingElements.Add(textBox);
                 Line line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Aquamarine);
                 line.X1 = PriceLine.X1 - 3;
@@ -243,7 +360,7 @@ namespace Market.Presentation
                 line.Y1 = DateLine.Y1 - y;
                 line.Y2 = DateLine.Y1 - y;
                 ChartCanvas.Children.Add(line);
-                drawingElements.Add(line);
+                chartDrawingElements.Add(line);
                 price += priceIncrementPerLabel;
                 y += YLabelPixel;
             }
@@ -251,7 +368,7 @@ namespace Market.Presentation
 
         private double GetPriceIncrementPerLabel(double priceDiff)
         {
-            int maxPriceLabelCount = YLengPixel/YLabelPixel;
+            int maxPriceLabelCount = YLengthPixel/YLabelPixel;
             int priceDiffInCents = Convert.ToInt32(Math.Ceiling(priceDiff*100));
             double priceIncrementPerLabel = (priceDiffInCents/(maxPriceLabelCount -2) + 1)/100d;
             if (priceIncrementPerLabel < 0.02)
@@ -308,10 +425,16 @@ namespace Market.Presentation
             return Math.Pow(10, Math.Floor(Math.Log10(minPrice)));
         }
 
-        private double GetYForPrice(double startPrice, double priceIncrementPerLabel, double price)
+        private double GetYForPrice(double price)
         {
             var priceIncrementPerPixel = priceIncrementPerLabel/YLabelPixel;
             return DateLine.Y1 - (price - startPrice)/priceIncrementPerPixel - YLabelPixel;
+        }
+
+        private double GetYForMacd(double value)
+        {
+            var macdIncrementPerPixel = macdIncrementPerLabel/MacdLabelPixel;
+            return ZeroLine.Y1 - value/macdIncrementPerPixel;
         }
 
         private double GetXForDateTime(DateTime timeStamp)
@@ -371,9 +494,9 @@ namespace Market.Presentation
         private void DrawChannelSupportLine(Channel channel, IList<UIElement> drawingElements)
         {
             var x1 = GetXForDateTime(channel.StartDate);
-            var y1 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice);
+            var y1 = GetYForPrice(channel.SupportStartPrice);
             var x2 = GetXForDateTime(channel.EndDate);
-            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.SupportStartPrice + channel.Length*channel.SupportChannelRatio);
+            var y2 = GetYForPrice(channel.SupportStartPrice + channel.Length*channel.SupportChannelRatio);
             Line line = new Line();
             if (channel.ChannelTrend == 0)
                 line.Stroke = new SolidColorBrush(Colors.Blue);
@@ -392,9 +515,9 @@ namespace Market.Presentation
         private void DrawChannelResistanceLine(Channel channel, IList<UIElement> drawingElements)
         {
             var x1 = GetXForDateTime(channel.StartDate);
-            var y1 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice);
+            var y1 = GetYForPrice(channel.ResistanceStartPrice);
             var x2 = GetXForDateTime(channel.EndDate);
-            var y2 = GetYForPrice(startPrice, priceIncrementPerLabel, channel.ResistanceStartPrice + channel.Length*channel.ResistanceChannelRatio);
+            var y2 = GetYForPrice(channel.ResistanceStartPrice + channel.Length*channel.ResistanceChannelRatio);
             Line line = new Line();
             if (channel.ChannelTrend == 0)
                 line.Stroke = new SolidColorBrush(Colors.Purple);

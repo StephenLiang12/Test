@@ -124,6 +124,7 @@
     <Compile Include="Suggestions\LongTermBuyAfterLongTermPrepareSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\ShortTermBuyForLongTermVibrationAnalyzer.cs" />
     <Compile Include="Suggestions\ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer.cs" />
+    <Compile Include="Suggestions\TrendChannels\TrendChannelBreakSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\TrendChannelSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\UpDownEvenTrendChannelSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\UpEvenEvenTrendChannelSuggestionAnalyzer .cs" />

@@ -993,10 +993,10 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             SortedList<DateTime, Suggestion> suggestionSortedList = new SortedList<DateTime, Suggestion>();
-            int stockKey = 946;
+            int stockKey = 477;
             double expectedAmmount = 10000;
             double existPercentage = 10;
-            foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey && s.AnalyzerName.Contains("Moving")))
+            foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey))
             {
                 if (suggestionSortedList.ContainsKey(suggestion.TimeStamp) == false)
                     suggestionSortedList.Add(suggestion.TimeStamp, suggestion);
@@ -1045,8 +1045,10 @@ namespace Market.TestFixture
                     double holdingPrice = holdingValue/availableVolume.Sum(a => a.Value);
                     var closePrice = pair.Value.ClosePrice;
                     var exists = (holdingPrice - closePrice)/holdingPrice*100 > existPercentage;
-                    //if (pair.Value.SuggestedTerm == Term.Short && holdingPrice > closePrice && exists == false)
-                    //    continue;
+                    if (pair.Value.SuggestedTerm == Term.Unlimited)
+                        exists = true;
+                    if (pair.Value.SuggestedTerm == Term.Short && holdingPrice > closePrice && exists == false)
+                        continue;
                     var timeStamp = pair.Key.AddDays(1);
                     if (context.TransactionData.Any(t => t.StockKey == stockKey && t.TimeStamp >= timeStamp))
                     {
@@ -1184,26 +1186,30 @@ namespace Market.TestFixture
         public void RerunAnalyzer()
         {
             StockContext context = new StockContext();
-            MACDSuggestionAnalyzer suggestionAnalyzer = new MACDSuggestionAnalyzer();
+            var suggestionAnalyzer = new MACDSuggestionAnalyzer();
             var transactionData =
-                context.TransactionData.Where(t => t.StockKey == 946 && t.TimeStamp <= new DateTime(2014, 08, 26))
+                context.TransactionData.Where(t => t.StockKey == 477 && t.TimeStamp <= new DateTime(2012, 1, 12))
                     .OrderBy(t => t.TimeStamp)
                     .ToList();
             var result = suggestionAnalyzer.CalculateForecaseCertainty(transactionData);
         }
 
         [TestMethod]
-        public void AbleToGenerateSuggestionByMACDAnalyzer()
+        public void AbleToGenerateSuggestionBySelctedSuggestionAnalyzer()
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
-            MACDSuggestionAnalyzer suggestionAnalyzer = new MACDSuggestionAnalyzer();
+            IList<ISuggestionAnalyzer> suggestionAnalyzers = new List<ISuggestionAnalyzer>();
+            MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
+            TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
+            suggestionAnalyzers.Add(macdSuggestionAnalyzer);
+            //suggestionAnalyzers.Add(trendChannelBreakSuggestionAnalyzer);
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 946)
+                if (stock.Key != 477)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
@@ -1277,16 +1283,19 @@ namespace Market.TestFixture
                         suggestion.Avg5VsAvg20 = movingAvg5_20;
                         //suggestion.Avg50VsAvg200 = movingAvg50_200;
 
-
-                        var forecaseCertainty = suggestionAnalyzer.CalculateForecaseCertainty(partialList);
-                        if (forecaseCertainty > 0)
+                        foreach (var suggestionAnalyzer in suggestionAnalyzers)
                         {
-                            suggestion.AnalyzerName = suggestionAnalyzer.Name;
-                            suggestion.SuggestedAction = suggestionAnalyzer.Action;
-                            suggestion.SuggestedTerm = suggestionAnalyzer.Term;
-                            suggestion.SuggestedPrice = suggestionAnalyzer.Price;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
+                            var forecaseCertainty = suggestionAnalyzer.CalculateForecaseCertainty(partialList);
+                            if (forecaseCertainty > 0)
+                            {
+                                suggestion.AnalyzerName = macdSuggestionAnalyzer.Name;
+                                suggestion.SuggestedAction = macdSuggestionAnalyzer.Action;
+                                suggestion.SuggestedTerm = macdSuggestionAnalyzer.Term;
+                                suggestion.SuggestedPrice = macdSuggestionAnalyzer.Price;
+                                context.Suggestions.Add(suggestion);
+                                context.SaveChanges();
+                                break;
+                            }
                         }
                     }
                     catch (Exception ex)

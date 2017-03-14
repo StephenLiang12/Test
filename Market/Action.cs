@@ -11,6 +11,7 @@
     {
         Short = 1,
         Intermediate = 2,
-        Long = 3
+        Long = 3,
+        Unlimited = 99
     }
 }
