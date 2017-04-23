@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Market.Analyzer;
 using Market.Analyzer.Channels;
+using Market.Analyzer.MACD;
 using Market.Tasks;
 
 namespace Market.Suggestions.MACD
@@ -19,7 +20,6 @@ namespace Market.Suggestions.MACD
         private readonly int longTerm;
 
         private readonly StockContext stockContext;
-        private readonly TrendChannelAnalyzer trendChannelAnalyzer;
         private readonly IStockTask stockTask;
 
         public MACDSuggestionAnalyzer() : this(50, 100, 200)
@@ -31,7 +31,6 @@ namespace Market.Suggestions.MACD
             this.interTerm = interTerm;
             this.longTerm = longTerm;
             stockContext = new StockContext();
-            trendChannelAnalyzer = new TrendChannelAnalyzer();
             stockTask = new StockTask();
         }
 
@@ -46,35 +45,39 @@ namespace Market.Suggestions.MACD
             DateTime endTime = orderedTransactions[count - 1].TimeStamp;
             var result = stockContext.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= startTime && m.TimeStamp <= endTime).OrderBy(m => m.TimeStamp);
             var array = result.ToArray();
-            double peakHistogram;
-            int peakHistogramIndex;
-            int sign = GetPeakHistogram(array, out peakHistogram, out peakHistogramIndex);
+            double histogram;
+            int index;
+            int sign = GetHistogramSign(array, out histogram, out index);
             if (sign > 0)
             {
-                if (peakHistogramIndex == count - 1 && Math.Sign(array[count - 2].Histogram) != sign)
+                //Histogram changes from negative to positive
+                if (index == count - 1 && Math.Sign(array[count - 2].Histogram) != sign)
                 {
-                    return CalculateBuyCertainty(orderedTransactions, stockKey, startTime, endTime);
+                    return CalculateBuyCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
                 }
-                if (peakHistogramIndex == count - 2)
+                //Histogram just peaked
+                if (index == count - 2)
                 {
-                    return CalculateSellCertainty(orderedTransactions, stockKey, startTime, endTime);
+                    return CalculateSellCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
                 }
             }
             else
             {
-                if (peakHistogramIndex == count - 1 && Math.Sign(array[count - 2].Histogram) != sign)
+                //Histogram changes from positive to negative
+                if (index == count - 1 && Math.Sign(array[count - 2].Histogram) != sign)
                 {
-                    return CalculateSellCertainty(orderedTransactions, stockKey, startTime, endTime);
+                    return CalculateSellCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
                 }
-                if (peakHistogramIndex == count - 2)
+                //Histogram just bottumed
+                if (index == count - 2)
                 {
-                    return CalculateBuyCertainty(orderedTransactions, stockKey, startTime, endTime);
+                    return 0;//CalculateBuyCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
                 }
             }
             return 0;
         }
 
-        private double CalculateSellCertainty(IList<TransactionData> orderedTransactions, int stockKey, DateTime startTime, DateTime endTime)
+        private double CalculateSellCertainty(IList<TransactionData> orderedTransactions, MovingAverageConvergenceDivergence[] array, int index, int sign, int stockKey, DateTime startTime, DateTime endTime)
         {
             Action = Action.Sell;
             var longTrendChannel = stockTask.GetChannel(stockKey, longTerm, startTime, endTime);
@@ -150,14 +153,17 @@ namespace Market.Suggestions.MACD
             return 1;
         }
 
-        private double CalculateBuyCertainty(IList<TransactionData> orderedTransactions, int stockKey, DateTime startTime, DateTime endTime)
+        private double CalculateBuyCertainty(IList<TransactionData> orderedTransactions, MovingAverageConvergenceDivergence[] array, int index, int sign, int stockKey, DateTime startTime, DateTime endTime)
         {
+            ////All MACD lines are below zero, no buy signal
+            //if (sign < 0 && array[index].MACD < 0 && array[index].Signal < 0)
+            //    return 0;
             var longTrendChannel = stockTask.GetChannel(stockKey, longTerm, startTime, endTime);
             var interTrendChannel = stockTask.GetChannel(stockKey, interTerm, startTime, endTime);
             var shortTrendChannel = stockTask.GetChannel(stockKey, shortTerm, startTime, endTime);
             Action = Action.Buy;
             //Long support line is positive
-            //if (longTrendChannel.GetSupportSign() > 0)
+            if (longTrendChannel.GetSupportSign() > 0)
             {
                 //Has a new low support line in long term, no buy signal
                 var previousLongTrendChannel = stockTask.GetPreviousChannel(stockKey, longTerm, endTime);
@@ -172,62 +178,67 @@ namespace Market.Suggestions.MACD
                     Term = Term.Long;
                     return 1;
                 }
-                //Price is rising, but is not from long support line
-                //Inter support line is positive
-                if (interTrendChannel.GetSupportSign() > 0)
-                {
-                    //Has a new low support line in inter term, no buy signal
-                    var previousInterTrendChannel = stockTask.GetPreviousChannel(stockKey, interTerm, endTime);
-                    if (previousInterTrendChannel != null &&
-                        interTrendChannel.SupportChannelRatio < previousInterTrendChannel.SupportChannelRatio)
-                        return 0;
-                    //Inter support line is strong and price is rising from iner support line
-                    if (interTrendChannel.IsSupportStrong(orderedTransactions) &&
-                        interTrendChannel.DoesCloseNearSupportLine(orderedTransactions))
-                    {
-                        Term = Term.Intermediate;
-                        return 1;
-                    }
-                }
-                //Price is rising, but is not from inter support line
-                //Short support line is positive
-                if (shortTrendChannel.GetSupportSign() > 0)
-                {
-                    //Has a new low support line in short term, no but signal
-                    var previousShortTrendChannel = stockTask.GetPreviousChannel(stockKey, shortTerm, endTime);
-                    if (previousShortTrendChannel != null &&
-                        shortTrendChannel.SupportChannelRatio < previousShortTrendChannel.SupportChannelRatio)
-                        return 0;
-                    //Short support line is strong and price is rising from short support line
-                    if (shortTrendChannel.IsSupportStrong(orderedTransactions) &&
-                        shortTrendChannel.DoesCloseNearSupportLine(orderedTransactions))
-                    {
-                        Term = Term.Short;
-                        return 1;
-                    }
-                }
                 //Price is close to long resistance line, no buy signal
                 if (longTrendChannel.DoesCloseNearResistanceLine(orderedTransactions))
+                    return 0;
+            }
+            //Price is rising, but is not from long support line
+            //Inter support line is positive
+            if (interTrendChannel.GetSupportSign() > 0)
+            {
+                //Has a new low support line in inter term, no buy signal
+                var previousInterTrendChannel = stockTask.GetPreviousChannel(stockKey, interTerm, endTime);
+                if (previousInterTrendChannel != null &&
+                    interTrendChannel.SupportChannelRatio < previousInterTrendChannel.SupportChannelRatio)
+                    return 0;
+                //Inter support line is strong and price is rising from iner support line
+                if (interTrendChannel.IsSupportStrong(orderedTransactions) &&
+                    interTrendChannel.DoesCloseNearSupportLine(orderedTransactions))
+                {
+                    Term = Term.Intermediate;
+                    return 1;
+                }
+                //Price is close to inter resistance line, no buy signal
+                if (interTrendChannel.DoesCloseNearResistanceLine(orderedTransactions))
+                    return 0;
+            }
+            //Price is rising, but is not from inter support line
+            //Short support line is positive
+            if (shortTrendChannel.GetSupportSign() > 0)
+            {
+                //Has a new low support line in short term, no but signal
+                var previousShortTrendChannel = stockTask.GetPreviousChannel(stockKey, shortTerm, endTime);
+                if (previousShortTrendChannel != null &&
+                    shortTrendChannel.SupportChannelRatio < previousShortTrendChannel.SupportChannelRatio)
+                    return 0;
+                //Short support line is strong and price is rising from short support line
+                if (shortTrendChannel.IsSupportStrong(orderedTransactions) &&
+                    shortTrendChannel.DoesCloseNearSupportLine(orderedTransactions))
+                {
+                    Term = Term.Short;
+                    return 1;
+                }
+                //Price is close to short resistance line, no buy signal
+                if (shortTrendChannel.DoesCloseNearResistanceLine(orderedTransactions))
                     return 0;
             }
             return 0;
         }
 
-        private int GetPeakHistogram(MovingAverageConvergenceDivergence[] array, out double peakHistogram,
-            out int peakHistogramIndex)
+        private int GetHistogramSign(MovingAverageConvergenceDivergence[] array, out double histogram, out int index)
         {
             int count = array.Length;
             int sign = Math.Sign(array[count - 1].Histogram);
-            peakHistogram = 0;
-            peakHistogramIndex = count - 1;
+            histogram = 0;
+            index = count - 1;
             for (int i = count - 1; i > 0; i--)
             {
                 if (sign != Math.Sign(array[i].Histogram))
                     break;
-                if (peakHistogram < Math.Abs(array[i].Histogram))
+                if (histogram < Math.Abs(array[i].Histogram))
                 {
-                    peakHistogram = Math.Abs(array[i].Histogram);
-                    peakHistogramIndex = i;
+                    histogram = Math.Abs(array[i].Histogram);
+                    index = i;
                 }
             }
             return sign;

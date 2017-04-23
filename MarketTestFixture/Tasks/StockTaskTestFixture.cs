@@ -372,50 +372,5 @@ namespace Market.TestFixture.Tasks
                 }
             }
         }
-
-        [TestMethod]
-        public void AbleToAnalyzeSignalLineCrossOver()
-        {
-            StockContext context = new StockContext();
-            DateTime cutOffDateTime = DateTime.Today.AddDays(-100);
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (stock.AbleToGetTransactionDataFromWeb == false)
-                    continue;
-
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key && t.TimeStamp > cutOffDateTime).OrderBy(t => t.TimeStamp).ToList();
-                MovingAverageConvergenceDivergenceAnalyzer analyzer = new MovingAverageConvergenceDivergenceAnalyzer();
-                MovingAverage avg5 = new MovingAverage();
-                avg5.NumberOfTransactions = 5;
-                avg5.Averages = new double[orderedList.Count];
-                MovingAverage avg10 = new MovingAverage();
-                avg10.NumberOfTransactions = 10;
-                avg10.Averages = new double[orderedList.Count];
-                MovingAverage avg20 = new MovingAverage();
-                avg20.NumberOfTransactions = 20;
-                avg20.Averages = new double[orderedList.Count];
-                MovingAverage avg50 = new MovingAverage();
-                avg50.NumberOfTransactions = 50;
-                avg50.Averages = new double[orderedList.Count];
-                for (int i = 0; i < orderedList.Count; i++)
-                {
-                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                }
-                try
-                {
-                    var signalLineCrossOver10_20_6 = analyzer.AnalyzeSignalLineCrossOver(orderedList, avg10, avg20, 8);
-                    if (signalLineCrossOver10_20_6.Convergence <= 0 && signalLineCrossOver10_20_6.Divergence > (1d/3))
-                        Console.WriteLine(stock.Id + " " + stock.Name + " " + stock.AvgVolume + " " + signalLineCrossOver10_20_6.Convergence + ":" + signalLineCrossOver10_20_6.Divergence);
-
-                }
-                catch (Exception)
-                {
-                }
-            }
-        }
     }
 }

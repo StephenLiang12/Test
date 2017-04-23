@@ -1,6 +1,7 @@
 ﻿using System.Data.Entity;
 using Market.Analyzer;
 using Market.Analyzer.Channels;
+using Market.Analyzer.MACD;
 using Market.Model;
 
 namespace Market
@@ -18,6 +19,7 @@ namespace Market
         public DbSet<TransactionSimulator> TransactionSimulators { get; set; }
         public DbSet<Channel> Channels { get; set; }
         public DbSet<MovingAverageConvergenceDivergence> MovingAverageConvergenceDivergences { get; set; }
+        public DbSet<MovingAverageConvergenceDivergenceAnalysis> MovingAverageConvergenceDivergenceAnalyses { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -29,6 +31,7 @@ namespace Market
             modelBuilder.Configurations.Add(new TransactionSimulatorMapping());
             modelBuilder.Configurations.Add(new ChannelMapping());
             modelBuilder.Configurations.Add(new MovingAverageConvergenceDivergenceMapping());
+            modelBuilder.Configurations.Add(new MovingAverageConvergenceDivergenceAnalysisMapping());
         }
     }
 }

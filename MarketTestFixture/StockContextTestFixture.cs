@@ -1,6 +1,7 @@
 ﻿using System;
 using Market.Analyzer;
 using Market.Analyzer.Channels;
+using Market.Analyzer.MACD;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Market.TestFixture
@@ -165,6 +166,27 @@ namespace Market.TestFixture
             context.MovingAverageConvergenceDivergences.Add(MovingAverageConvergenceDivergence);
             context.SaveChanges();
             Assert.IsTrue(MovingAverageConvergenceDivergence.Key > 0);
+        }
+
+        [TestMethod]
+        public void AbleToAddMovingAverageConvergenceDivergenceAnalysis()
+        {
+            StockContext context = new StockContext();
+            Stock stock = new Stock();
+            stock.Id = "TEST.TO";
+            stock.Name = "Test";
+            context.Stocks.Add(stock);
+            context.SaveChanges();
+            MovingAverageConvergenceDivergenceAnalysis analysis = new MovingAverageConvergenceDivergenceAnalysis();
+            analysis.StockKey = stock.Key;
+            analysis.TimeStamp = DateTime.Today;
+            analysis.MACD = 1;
+            analysis.Signal = 2;
+            analysis.Histogram = 3;
+            analysis.Feature = MovingAverageConvergenceDivergenceFeature.RiseAboveZero;
+            context.MovingAverageConvergenceDivergenceAnalyses.Add(analysis);
+            context.SaveChanges();
+            Assert.IsTrue(analysis.Key > 0);
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Market.Analyzer;
 using Market.Analyzer.Channels;
+using Market.Analyzer.MACD;
 
 namespace Market.Presentation
 {

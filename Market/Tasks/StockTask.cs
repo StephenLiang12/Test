@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using Market.Analyzer;
 using Market.Analyzer.Channels;
+using Market.Analyzer.MACD;
 using Market.Web;
 using Market.Web.Factory;
 

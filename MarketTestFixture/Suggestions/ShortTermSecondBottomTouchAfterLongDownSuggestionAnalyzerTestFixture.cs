@@ -15,7 +15,6 @@ namespace Market.TestFixture.Suggestions
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             {
                 var stock = context.Stocks.First(s => s.Key == 359);

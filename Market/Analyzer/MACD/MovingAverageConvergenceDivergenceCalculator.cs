@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Market.Analyzer
+namespace Market.Analyzer.MACD
 {
     public class MovingAverageConvergenceDivergenceCalculator
     {

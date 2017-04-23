@@ -73,12 +73,13 @@
     <Compile Include="Analyzer\Channels\Channel.cs" />
     <Compile Include="Analyzer\Channels\ChannelExtension.cs" />
     <Compile Include="Analyzer\Channels\TrendChannelAnalyzer.cs" />
+    <Compile Include="Analyzer\EnumerableExtension.cs" />
     <Compile Include="Analyzer\ExponentMovingAverageCalculator.cs" />
+    <Compile Include="Analyzer\MACD\MovingAverageConvergenceDivergencePatternAnalyzer.cs" />
     <Compile Include="Analyzer\MovingAverage.cs" />
     <Compile Include="Analyzer\MovingAverageAnalyzer.cs" />
-    <Compile Include="Analyzer\MovingAverageConvergenceDivergenceAnalyzer.cs" />
-    <Compile Include="Analyzer\MovingAverageConvergenceDivergenceCalculator.cs" />
-    <Compile Include="Analyzer\MovingAverageConvergenceDivergenceResult.cs" />
+    <Compile Include="Analyzer\MACD\MovingAverageConvergenceDivergenceCalculator.cs" />
+    <Compile Include="Analyzer\MACD\MovingAverageConvergenceDivergenceResult.cs" />
     <Compile Include="Analyzer\MovingAverageExtension.cs" />
     <Compile Include="Analyzer\CandleStickPatternAnalyzer.cs" />
     <Compile Include="Analyzer\SimpleMovingAverageCalculator.cs" />

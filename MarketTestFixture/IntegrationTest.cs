@@ -15,457 +15,10 @@ namespace Market.TestFixture
     public class IntegrationTest
     {
         [TestMethod]
-        public void AbleToGetShortTermBuyingStocks()
-        {
-            StockContext context = new StockContext();
-            MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
-            CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
-            Console.WriteLine("Id, Name, DateTime, Volume, Action, Close, CandleStickPattern, MACD, Avg5 Trend, Avg20 Trend, Price VS Avg5,Avg5 VS Avg20");
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (stock.AbleToGetTransactionDataFromWeb == false)
-                    continue;
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                MovingAverage avg5 = new MovingAverage();
-                avg5.NumberOfTransactions = 5;
-                avg5.Averages = new double[orderedList.Count];
-                MovingAverage avg10 = new MovingAverage();
-                avg10.NumberOfTransactions = 10;
-                avg10.Averages = new double[orderedList.Count];
-                MovingAverage avg20 = new MovingAverage();
-                avg20.NumberOfTransactions = 20;
-                avg20.Averages = new double[orderedList.Count];
-                MovingAverage avg50 = new MovingAverage();
-                avg50.NumberOfTransactions = 50;
-                avg50.Averages = new double[orderedList.Count];
-                MovingAverage avg100 = new MovingAverage();
-                avg100.NumberOfTransactions = 100;
-                avg100.Averages = new double[orderedList.Count];
-                MovingAverage avg200 = new MovingAverage();
-                avg200.NumberOfTransactions = 200;
-                avg200.Averages = new double[orderedList.Count];
-                for (int i = 0; i < orderedList.Count; i++)
-                {
-                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                    avg100.Averages[i] = orderedList[i].SimpleAvg100;
-                    avg200.Averages[i] = orderedList[i].SimpleAvg200;
-                }
-                try
-                {
-                    for (int i = 2; i >=0; i--)
-                    {
-                        var partialList = orderedList.GetFrontPartial(orderedList.Count - i);
-                        var partialAvg5 = avg5.GetPartial(orderedList.Count - i);
-                        var partialAvg10 = avg10.GetPartial(orderedList.Count - i);
-                        var partialAvg20 = avg20.GetPartial(orderedList.Count - i);
-                        var partialAvg50 = avg50.GetPartial(orderedList.Count - i);
-                        var partialAvg200 = avg200.GetPartial(orderedList.Count - i);
-                        double priceMovingAvg5 = analyzer.PriceCompareAverage(partialList, partialAvg5);
-                        double movingAvg5_20 = analyzer.AverageCrossOver(partialAvg5, partialAvg20);
-                        var movingTrend5 = analyzer.AnalyzeMovingTrend(partialAvg5);
-                        var pattern = candleStickPatternAnalyzer.GetPattern(partialList, movingTrend5);
-                        var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
-                        var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList, partialAvg10, partialAvg20, 8);
-                        if (pattern.UpcomingTrend == Trend.Up || ((movingTrend20 == Trend.Vibration || movingTrend20 == Trend.Bottom) && priceMovingAvg5 > 0))
-                            Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", stock.Id, stock.Name,
-                                partialList[partialList.Count - 1].TimeStamp, partialList[partialList.Count - 1].Volume,
-                                "Short Term Buy", partialList[partialList.Count - 1].Close, pattern.Name,
-                                signalLineCrossOver10_20_6.Divergence, movingTrend5, movingTrend20, priceMovingAvg5,
-                                movingAvg5_20);
-                        if (pattern.UpcomingTrend == Trend.Down || ((movingTrend20 == Trend.Vibration || movingTrend20 == Trend.Top) && priceMovingAvg5 < 0))
-                            Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", stock.Id, stock.Name,
-                                partialList[partialList.Count - 1].TimeStamp, partialList[partialList.Count - 1].Volume,
-                                "Short Term Sell", partialList[partialList.Count - 1].Close, pattern.Name,
-                                signalLineCrossOver10_20_6.Divergence, movingTrend5, movingTrend20, priceMovingAvg5,
-                                movingAvg5_20);
-                    }
-
-                }
-                catch (Exception)
-                {
-                }
-            }
-        }
-
-        [TestMethod]
-        public void AbleToGetShortTermSellingStocks()
-        {
-            StockContext context = new StockContext();
-            MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
-            CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
-            Console.WriteLine("Id, Name, Volume, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (stock.AbleToGetTransactionDataFromWeb == false)
-                    continue;
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                MovingAverage avg5 = new MovingAverage();
-                avg5.NumberOfTransactions = 5;
-                avg5.Averages = new double[orderedList.Count];
-                MovingAverage avg10 = new MovingAverage();
-                avg10.NumberOfTransactions = 10;
-                avg10.Averages = new double[orderedList.Count];
-                MovingAverage avg20 = new MovingAverage();
-                avg20.NumberOfTransactions = 20;
-                avg20.Averages = new double[orderedList.Count];
-                MovingAverage avg50 = new MovingAverage();
-                avg50.NumberOfTransactions = 50;
-                avg50.Averages = new double[orderedList.Count];
-                MovingAverage avg100 = new MovingAverage();
-                avg100.NumberOfTransactions = 100;
-                avg100.Averages = new double[orderedList.Count];
-                MovingAverage avg200 = new MovingAverage();
-                avg200.NumberOfTransactions = 200;
-                avg200.Averages = new double[orderedList.Count];
-                for (int i = 0; i < orderedList.Count; i++)
-                {
-                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                    avg100.Averages[i] = orderedList[i].SimpleAvg100;
-                    avg200.Averages[i] = orderedList[i].SimpleAvg200;
-                }
-                try
-                {
-                    double priceMovingAvg5 = analyzer.PriceCompareAverage(orderedList, avg5);
-                    double movingAvg5_20 = analyzer.AverageCrossOver(avg5, avg20);
-                    var movingTrend5 = analyzer.AnalyzeMovingTrend(avg5);
-                    var pattern = candleStickPatternAnalyzer.GetPattern(orderedList, movingTrend5);
-                    var movingTrend20 = analyzer.AnalyzeMovingTrend(avg20);
-                    var movingTrend200 = analyzer.AnalyzeMovingTrend(avg200);
-                    var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(orderedList, avg10,
-                        avg20, 8);
-                    if (pattern.UpcomingTrend == Trend.Down)
-                        Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8}", stock.Id, stock.Name, stock.AvgVolume, pattern.Name, signalLineCrossOver10_20_6.Divergence, movingTrend20, movingTrend200, priceMovingAvg5, movingAvg5_20);
-
-                }
-                catch (Exception)
-                {
-                }
-            }
-        }
-
-        [TestMethod]
-        public void AbleToGetIntermediaTermBuyingStocks()
-        {
-            StockContext context = new StockContext();
-            MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
-            CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
-            Console.WriteLine("Id, Name, DateTime, Volume, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg20,Avg5 VS Avg20");
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (stock.AbleToGetTransactionDataFromWeb == false)
-                    continue;
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                MovingAverage avg5 = new MovingAverage();
-                avg5.NumberOfTransactions = 5;
-                avg5.Averages = new double[orderedList.Count];
-                MovingAverage avg10 = new MovingAverage();
-                avg10.NumberOfTransactions = 10;
-                avg10.Averages = new double[orderedList.Count];
-                MovingAverage avg20 = new MovingAverage();
-                avg20.NumberOfTransactions = 20;
-                avg20.Averages = new double[orderedList.Count];
-                MovingAverage avg50 = new MovingAverage();
-                avg50.NumberOfTransactions = 50;
-                avg50.Averages = new double[orderedList.Count];
-                MovingAverage avg100 = new MovingAverage();
-                avg100.NumberOfTransactions = 100;
-                avg100.Averages = new double[orderedList.Count];
-                MovingAverage avg200 = new MovingAverage();
-                avg200.NumberOfTransactions = 200;
-                avg200.Averages = new double[orderedList.Count];
-                for (int i = 0; i < orderedList.Count; i++)
-                {
-                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                    avg100.Averages[i] = orderedList[i].SimpleAvg100;
-                    avg200.Averages[i] = orderedList[i].SimpleAvg200;
-                }
-                try
-                {
-                    for (int i = 2; i >= 0; i--)
-                    {
-                        var partialList = orderedList.GetFrontPartial(orderedList.Count - i);
-                        var partialAvg5 = avg5.GetPartial(orderedList.Count - i);
-                        var partialAvg10 = avg10.GetPartial(orderedList.Count - i);
-                        var partialAvg20 = avg20.GetPartial(orderedList.Count - i);
-                        var partialAvg50 = avg50.GetPartial(orderedList.Count - i);
-                        var partialAvg200 = avg200.GetPartial(orderedList.Count - i);
-                        double priceMovingAvg5 = analyzer.PriceCompareAverage(partialList, partialAvg5);
-                        double priceMovingAvg20 = analyzer.PriceCompareAverage(partialList, partialAvg20);
-                        double movingAvg5_20 = analyzer.AverageCrossOver(partialAvg5, partialAvg20);
-                        var movingTrend5 = analyzer.AnalyzeMovingTrend(partialAvg5);
-                        var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
-                        var pattern = candleStickPatternAnalyzer.GetPattern(partialList, movingTrend5);
-                        var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
-                        var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
-                            partialAvg10, partialAvg20, 8);
-                        if (priceMovingAvg20 > 0 && movingAvg5_20 > 0 && signalLineCrossOver10_20_6.Convergence <= 0 &&
-                            signalLineCrossOver10_20_6.Divergence > 0 && movingTrend50 != Trend.Down)
-                            Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", stock.Id, stock.Name,
-                                partialList[partialList.Count - 1].TimeStamp, partialList[partialList.Count - 1].Volume,
-                                "Inter Term Buy", partialList[partialList.Count - 1].Close, pattern.Name,
-                                signalLineCrossOver10_20_6.Divergence, movingTrend20,
-                                movingTrend200, priceMovingAvg5, movingAvg5_20);
-                        if (priceMovingAvg20 < 0 && movingAvg5_20 < 0 && signalLineCrossOver10_20_6.Convergence >= 0 &&
-                            signalLineCrossOver10_20_6.Divergence < 0 && movingTrend50 != Trend.Up)
-                            Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", stock.Id, stock.Name,
-                                partialList[partialList.Count - 1].TimeStamp, partialList[partialList.Count - 1].Volume,
-                                "Inter Term Sell", partialList[partialList.Count - 1].Close, pattern.Name,
-                                signalLineCrossOver10_20_6.Divergence, movingTrend20,
-                                movingTrend200, priceMovingAvg20, movingAvg5_20);
-                    }
-                }
-                catch (Exception)
-                {
-                }
-            }
-        }
-
-        [TestMethod]
-        public void AbleToGetLongTermBuyingStocks()
-        {
-            StockContext context = new StockContext();
-            MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
-            CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
-            Console.WriteLine("Id, Name, DateTime, Volume, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg200,Avg50 VS Avg200");
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (stock.AbleToGetTransactionDataFromWeb == false)
-                    continue;
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                MovingAverage avg5 = new MovingAverage();
-                avg5.NumberOfTransactions = 5;
-                avg5.Averages = new double[orderedList.Count];
-                MovingAverage avg10 = new MovingAverage();
-                avg10.NumberOfTransactions = 10;
-                avg10.Averages = new double[orderedList.Count];
-                MovingAverage avg20 = new MovingAverage();
-                avg20.NumberOfTransactions = 20;
-                avg20.Averages = new double[orderedList.Count];
-                MovingAverage avg50 = new MovingAverage();
-                avg50.NumberOfTransactions = 50;
-                avg50.Averages = new double[orderedList.Count];
-                MovingAverage avg100 = new MovingAverage();
-                avg100.NumberOfTransactions = 100;
-                avg100.Averages = new double[orderedList.Count];
-                MovingAverage avg200 = new MovingAverage();
-                avg200.NumberOfTransactions = 200;
-                avg200.Averages = new double[orderedList.Count];
-                for (int i = 0; i < orderedList.Count; i++)
-                {
-                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                    avg100.Averages[i] = orderedList[i].SimpleAvg100;
-                    avg200.Averages[i] = orderedList[i].SimpleAvg200;
-                }
-                try
-                {
-                    for (int i = 2; i >= 0; i--)
-                    {
-                        var partialList = orderedList.GetFrontPartial(orderedList.Count - i);
-                        var partialAvg5 = avg5.GetPartial(orderedList.Count - i);
-                        var partialAvg10 = avg10.GetPartial(orderedList.Count - i);
-                        var partialAvg20 = avg20.GetPartial(orderedList.Count - i);
-                        var partialAvg50 = avg50.GetPartial(orderedList.Count - i);
-                        var partialAvg200 = avg200.GetPartial(orderedList.Count - i);
-                        double priceMovingAvg5 = analyzer.PriceCompareAverage(partialList, partialAvg5);
-                        double priceMovingAvg20 = analyzer.PriceCompareAverage(partialList, partialAvg20);
-                        double priceMovingAvg200 = analyzer.PriceCompareAverage(partialList, partialAvg200);
-                        double movingAvg5_20 = analyzer.AverageCrossOver(partialAvg5, partialAvg20);
-                        double movingAvg50_200 = analyzer.AverageCrossOver(partialAvg50, partialAvg200);
-                        var movingTrend5 = analyzer.AnalyzeMovingTrend(partialAvg5);
-                        var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
-                        var pattern = candleStickPatternAnalyzer.GetPattern(partialList, movingTrend5);
-                        var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
-                        var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
-                            partialAvg10, partialAvg20, 8);
-                        if (priceMovingAvg200 > 0 && movingAvg50_200 > 0 && signalLineCrossOver10_20_6.Divergence > 0)
-                            Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", stock.Id, stock.Name,
-                                partialList[partialList.Count - 1].TimeStamp, partialList[partialList.Count - 1].Volume,
-                                "Long Term Buy", partialList[partialList.Count - 1].Close, pattern.Name,
-                                signalLineCrossOver10_20_6.Divergence, movingTrend20, movingTrend200, priceMovingAvg200,
-                                movingAvg50_200);
-                        if (priceMovingAvg200 < 0 && movingAvg50_200 < 0 && signalLineCrossOver10_20_6.Divergence < 0)
-                            Console.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", stock.Id, stock.Name,
-                                partialList[partialList.Count - 1].TimeStamp, partialList[partialList.Count - 1].Volume,
-                                "Long Term Sell", partialList[partialList.Count - 1].Close, pattern.Name,
-                                signalLineCrossOver10_20_6.Divergence, movingTrend20, movingTrend200, priceMovingAvg200,
-                                movingAvg50_200);
-                    }
-
-                }
-                catch (Exception)
-                {
-                }
-            }
-        }
-
-        [TestMethod]
-        public void TestSuggestion()
-        {
-            StockContext context = new StockContext();
-            MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
-            CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
-            Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            foreach (var stock in context.Stocks.ToList())
-            {
-                if (stock.AbleToGetTransactionDataFromWeb == false || stock.Key != 258)
-                    continue;
-                //var stock = context.Stocks.First(s => s.Id == "TRP.TO");
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                MovingAverage avg5 = new MovingAverage();
-                avg5.NumberOfTransactions = 5;
-                avg5.Averages = new double[orderedList.Count];
-                MovingAverage avg10 = new MovingAverage();
-                avg10.NumberOfTransactions = 10;
-                avg10.Averages = new double[orderedList.Count];
-                MovingAverage avg20 = new MovingAverage();
-                avg20.NumberOfTransactions = 20;
-                avg20.Averages = new double[orderedList.Count];
-                MovingAverage avg50 = new MovingAverage();
-                avg50.NumberOfTransactions = 50;
-                avg50.Averages = new double[orderedList.Count];
-                MovingAverage avg100 = new MovingAverage();
-                avg100.NumberOfTransactions = 100;
-                avg100.Averages = new double[orderedList.Count];
-                MovingAverage avg200 = new MovingAverage();
-                avg200.NumberOfTransactions = 200;
-                avg200.Averages = new double[orderedList.Count];
-                for (int i = 0; i < orderedList.Count; i++)
-                {
-                    avg5.Averages[i] = orderedList[i].SimpleAvg5;
-                    avg10.Averages[i] = orderedList[i].SimpleAvg10;
-                    avg20.Averages[i] = orderedList[i].SimpleAvg20;
-                    avg50.Averages[i] = orderedList[i].SimpleAvg50;
-                    avg100.Averages[i] = orderedList[i].SimpleAvg100;
-                    avg200.Averages[i] = orderedList[i].SimpleAvg200;
-                }
-                int j = 200;
-                while (j < orderedList.Count)
-                {
-                    try
-                    {
-                        var partialList = orderedList.GetFrontPartial(j);
-                        var partialAvg5 = avg5.GetPartial(j);
-                        var partialAvg10 = avg10.GetPartial(j);
-                        var partialAvg20 = avg20.GetPartial(j);
-                        var partialAvg50 = avg50.GetPartial(j);
-                        var partialAvg200 = avg200.GetPartial(j);
-                        var partialMovingTrend5 = analyzer.AnalyzeMovingTrend(partialAvg5);
-                        var partialPattern = candleStickPatternAnalyzer.GetPattern(partialList, partialMovingTrend5);
-                        double priceMovingAvg5 = analyzer.PriceCompareAverage(partialList, partialAvg5);
-                        double priceMovingAvg20 = analyzer.PriceCompareAverage(partialList, partialAvg20);
-                        double priceMovingAvg200 = analyzer.PriceCompareAverage(partialList, partialAvg200);
-                        double movingAvg5_20 = analyzer.AverageCrossOver(partialAvg5, partialAvg20);
-                        double movingAvg50_200 = analyzer.AverageCrossOver(partialAvg50, partialAvg200);
-                        var movingTrend10 = analyzer.AnalyzeMovingTrend(partialAvg10);
-                        var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
-                        var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
-                        var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
-                            partialAvg10,
-                            partialAvg20, 8);
-                        Suggestion suggestion = new Suggestion();
-                        suggestion.TimeStamp = partialList[j - 1].TimeStamp;
-                        suggestion.StockKey = stock.Key;
-                        suggestion.StockId = stock.Id;
-                        suggestion.StockName = stock.Name;
-                        suggestion.ClosePrice = partialList[j - 1].Close;
-                        suggestion.Volume = partialList[j - 1].Volume;
-                        suggestion.CandleStickPattern = partialPattern.Name;
-                        suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
-                        suggestion.Avg5Trend = partialMovingTrend5;
-                        suggestion.Avg20Trend = movingTrend20;
-                        suggestion.Avg200Trend = movingTrend200;
-                        suggestion.PriceVsAvg5 = priceMovingAvg5;
-                        suggestion.PriceVsAvg200 = priceMovingAvg200;
-                        suggestion.Avg5VsAvg20 = movingAvg5_20;
-                        suggestion.Avg50VsAvg200 = movingAvg50_200;
-
-                        if (partialPattern.UpcomingTrend == Trend.Up ||
-                            ((movingTrend20 == Trend.Vibration || movingTrend20 == Trend.Bottom) && priceMovingAvg5 > 0))
-                        {
-                            suggestion.SuggestedTerm = Term.Short;
-                            suggestion.SuggestedAction = Action.Buy;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
-                        }
-                        if (partialPattern.UpcomingTrend == Trend.Down ||
-                            ((movingTrend20 == Trend.Vibration || movingTrend20 == Trend.Top) && priceMovingAvg5 < 0))
-                        {
-                            suggestion.SuggestedTerm = Term.Short;
-                            suggestion.SuggestedAction = Action.Sell;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
-                        }
-                        if (priceMovingAvg20 > 0 && movingAvg5_20 > 0 && signalLineCrossOver10_20_6.Convergence <= 0 &&
-                            signalLineCrossOver10_20_6.Divergence > 0 && movingTrend50 != Trend.Down)
-                        {
-                            suggestion.SuggestedTerm = Term.Intermediate;
-                            suggestion.SuggestedAction = Action.Buy;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
-                        }
-                        if (priceMovingAvg20 < 0 && movingAvg5_20 < 0 && signalLineCrossOver10_20_6.Convergence >= 0 &&
-                            signalLineCrossOver10_20_6.Divergence < 0 && movingTrend50 != Trend.Up)
-                        {
-                            suggestion.SuggestedTerm = Term.Intermediate;
-                            suggestion.SuggestedAction = Action.Sell;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
-                        }
-                        if (priceMovingAvg200 > 0 && movingAvg50_200 > 0 && signalLineCrossOver10_20_6.Divergence > 0)
-                        {
-                            suggestion.SuggestedTerm = Term.Long;
-                            suggestion.SuggestedAction = Action.Buy;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
-                        }
-                        if (priceMovingAvg200 < 0 && movingAvg50_200 < 0 && signalLineCrossOver10_20_6.Divergence < 0)
-                        {
-                            suggestion.SuggestedTerm = Term.Long;
-                            suggestion.SuggestedAction = Action.Sell;
-                            context.Suggestions.Add(suggestion);
-                            context.SaveChanges();
-                        }
-                    }
-                    catch (Exception)
-                    {
-                    }
-                    j++;
-                }
-            }
-        }
-
-        [TestMethod]
         public void TestSuggestionAnalyzer()
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
@@ -525,9 +78,6 @@ namespace Market.TestFixture
                         var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
                         var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
                         var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
-                            partialAvg10,
-                            partialAvg20, 8);
                         Suggestion suggestion = new Suggestion();
                         suggestion.TimeStamp = partialList[j - 1].TimeStamp;
                         suggestion.StockKey = stock.Key;
@@ -536,7 +86,6 @@ namespace Market.TestFixture
                         suggestion.ClosePrice = partialList[j - 1].Close;
                         suggestion.Volume = partialList[j - 1].Volume;
                         suggestion.CandleStickPattern = partialPattern.Name;
-                        suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
                         suggestion.Avg5Trend = partialMovingTrend5;
                         suggestion.Avg20Trend = movingTrend20;
                         suggestion.Avg200Trend = movingTrend200;
@@ -760,7 +309,6 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer movingAverageConvergenceDivergenceAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
@@ -880,13 +428,19 @@ namespace Market.TestFixture
             //}
         }
 
+        [TestMethod]
+        public void AbleToCalculateMovingAverageConvergenceDivergence()
+        {
+            StockTask stockTask = new StockTask();
+            stockTask.CalculateMovingAverageConvergenceDivergence(479);
+        }
+
 
         [TestMethod]
         public void AbleToGenerateSuggestionByTrendChannelAnalyzer()
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             TrendChannelSuggestionAnalyzer suggestionAnalyzer = new TrendChannelSuggestionAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
@@ -945,9 +499,6 @@ namespace Market.TestFixture
                         var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
                         var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
                         var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
-                            partialAvg10,
-                            partialAvg20, 8);
                         Suggestion suggestion = new Suggestion();
 
                         suggestion.TimeStamp = partialList[j - 1].TimeStamp;
@@ -957,7 +508,6 @@ namespace Market.TestFixture
                         suggestion.ClosePrice = partialList[j - 1].Close;
                         suggestion.Volume = partialList[j - 1].Volume;
                         suggestion.CandleStickPattern = partialPattern.Name;
-                        suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
                         suggestion.Avg5Trend = partialMovingTrend5;
                         suggestion.Avg20Trend = movingTrend20;
                         suggestion.Avg200Trend = movingTrend200;
@@ -1188,7 +738,7 @@ namespace Market.TestFixture
             StockContext context = new StockContext();
             var suggestionAnalyzer = new MACDSuggestionAnalyzer();
             var transactionData =
-                context.TransactionData.Where(t => t.StockKey == 477 && t.TimeStamp <= new DateTime(2012, 1, 12))
+                context.TransactionData.Where(t => t.StockKey == 477 && t.TimeStamp <= new DateTime(2016, 1, 6) && t.TimeStamp >= new DateTime(2015, 1, 6))
                     .OrderBy(t => t.TimeStamp)
                     .ToList();
             var result = suggestionAnalyzer.CalculateForecaseCertainty(transactionData);
@@ -1199,7 +749,6 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
-            MovingAverageConvergenceDivergenceAnalyzer macdAnalyzer = new MovingAverageConvergenceDivergenceAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             IList<ISuggestionAnalyzer> suggestionAnalyzers = new List<ISuggestionAnalyzer>();
             MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
@@ -1262,9 +811,6 @@ namespace Market.TestFixture
                         var movingTrend20 = analyzer.AnalyzeMovingTrend(partialAvg20);
                         var movingTrend50 = analyzer.AnalyzeMovingTrend(partialAvg50);
                         var movingTrend200 = analyzer.AnalyzeMovingTrend(partialAvg200);
-                        var signalLineCrossOver10_20_6 = macdAnalyzer.AnalyzeSignalLineCrossOver(partialList,
-                            partialAvg10,
-                            partialAvg20, 8);
                         Suggestion suggestion = new Suggestion();
 
                         suggestion.TimeStamp = partialList[j - 1].TimeStamp;
@@ -1274,7 +820,6 @@ namespace Market.TestFixture
                         suggestion.ClosePrice = partialList[j - 1].Close;
                         suggestion.Volume = partialList[j - 1].Volume;
                         suggestion.CandleStickPattern = partialPattern.Name;
-                        suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
                         suggestion.Avg5Trend = partialMovingTrend5;
                         suggestion.Avg20Trend = movingTrend20;
                         suggestion.Avg200Trend = movingTrend200;

@@ -68,8 +68,10 @@
     <Compile Include="Analyzer\CandleStickPatterns\HangingManTestFixture.cs" />
     <Compile Include="Analyzer\CandleStickPatterns\MarubozuTestFixture.cs" />
     <Compile Include="Analyzer\Channels\TrendChannelAnalyzerTestFixture.cs" />
+    <Compile Include="Analyzer\EnumerableExtensionTestFixture.cs" />
     <Compile Include="Analyzer\ExponentMovingAverageCalculatorTestFixture.cs" />
     <Compile Include="Analyzer\MovingAverageAnalyzerTestFixture.cs" />
+    <Compile Include="Analyzer\MovingAverageConvergenceDivergenceTestFixture.cs" />
     <Compile Include="Analyzer\SimpleMovingAverageCalculatorTestFixture.cs" />
     <Compile Include="CodeTestFixture.cs" />
     <Compile Include="Data\SampleDataReader.cs" />

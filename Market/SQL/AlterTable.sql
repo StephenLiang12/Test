@@ -302,3 +302,15 @@ if (not exists (select i.* from sysobjects o
                                     where o.id = ic.object_id and i.index_id = ic.index_id and c.name = 'Length')))
     alter table Channel add unique (StockKey, StartDate, Length)
 
+--Create MovingAverageConvergenceDivergenceAnalysis table
+if not exists (select * from sysobjects where name = 'MovingAverageConvergenceDivergenceAnalysis' and xtype = 'u')
+	CREATE TABLE MovingAverageConvergenceDivergenceAnalysis (
+		[Key]	bigint Primary Key Identity(1,1),
+		StockKey	int not null references Stock([Key]),
+		TimeStamp	DateTime not null,
+		MACD	float not null,
+		Signal	float not null,
+		Histogram	float not null,
+		Feature	int
+	)
+

@@ -68,7 +68,7 @@ namespace Market.Analyzer.Channels
             {
                 var supportPrice = channel.SupportStartPrice + channel.SupportChannelRatio*i;
                 var resistancePrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio*i;
-                if ((transactions[i].Low - supportPrice) / (resistancePrice - supportPrice) <= 0.02)
+                if ((transactions[i].Low - supportPrice) / (resistancePrice - supportPrice) <= 0.1)
                     count++;
             }
             return (count -2) * 25 >= channel.Length;
@@ -83,7 +83,7 @@ namespace Market.Analyzer.Channels
                 var gap = resistancePrice - supportPrice;
                 if (gap < 0.005)
                     return true;
-                var closeEnough = (orderedTransactions[orderedTransactions.Count - i - 1].Low - supportPrice) / gap <= 0.02;
+                var closeEnough = (orderedTransactions[orderedTransactions.Count - i - 1].Low - supportPrice) / gap <= 0.1;
                 if (closeEnough)
                     return true;
             }
@@ -98,7 +98,7 @@ namespace Market.Analyzer.Channels
             {
                 var supportPrice = channel.SupportStartPrice + channel.SupportChannelRatio * i;
                 var resistancePrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio * i;
-                if ((resistancePrice - transactions[i].High) /(resistancePrice - resistancePrice) <= 0.02)
+                if ((resistancePrice - transactions[i].High) /(resistancePrice - resistancePrice) <= 0.1)
                     count++;
             }
             return (count -2 ) * 25 > channel.Length;
@@ -113,7 +113,7 @@ namespace Market.Analyzer.Channels
                 var gap = resistancePrice - supportPrice;
                 if (gap < 0.005)
                     return true;
-                var closeEnough = (resistancePrice - orderedTransactions[orderedTransactions.Count - i - 1].High) / gap <= 0.02;
+                var closeEnough = (resistancePrice - orderedTransactions[orderedTransactions.Count - i - 1].High) / gap <= 0.1;
                 if (closeEnough)
                     return true;
             }
