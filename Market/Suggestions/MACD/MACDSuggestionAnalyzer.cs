@@ -21,6 +21,7 @@ namespace Market.Suggestions.MACD
 
         private readonly StockContext stockContext;
         private readonly IStockTask stockTask;
+        private MovingAverageConvergenceDivergencePatternAnalyzer movingAverageConvergenceDivergencePatternAnalyzer;
 
         public MACDSuggestionAnalyzer() : this(50, 100, 200)
         {}
@@ -32,6 +33,7 @@ namespace Market.Suggestions.MACD
             this.longTerm = longTerm;
             stockContext = new StockContext();
             stockTask = new StockTask();
+            movingAverageConvergenceDivergencePatternAnalyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
         }
 
         public double CalculateForecaseCertainty(IList<TransactionData> orderedTransactions)
@@ -43,41 +45,27 @@ namespace Market.Suggestions.MACD
             int stockKey = orderedTransactions[0].StockKey;
             DateTime startTime = orderedTransactions[0].TimeStamp;
             DateTime endTime = orderedTransactions[count - 1].TimeStamp;
-            var result = stockContext.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= startTime && m.TimeStamp <= endTime).OrderBy(m => m.TimeStamp);
-            var array = result.ToArray();
-            double histogram;
-            int index;
-            int sign = GetHistogramSign(array, out histogram, out index);
-            if (sign > 0)
+            var list = stockContext.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= startTime && m.TimeStamp <= endTime).OrderBy(m => m.TimeStamp).ToList();
+            var pattern = movingAverageConvergenceDivergencePatternAnalyzer.Analyze(list);
+            if (pattern != MovingAverageConvergenceDivergenceFeature.Unkown)
             {
-                //Histogram changes from negative to positive
-                if (index == count - 1 && Math.Sign(array[count - 2].Histogram) != sign)
+                var analysis = list[list.Count - 1].CopyToAnalysis();
+                analysis.Feature = pattern;
+                if (stockContext.MovingAverageConvergenceDivergenceAnalyses.Any(a => a.StockKey == analysis.StockKey && a.TimeStamp == analysis.TimeStamp) == false)
                 {
-                    return CalculateBuyCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
+                    stockContext.MovingAverageConvergenceDivergenceAnalyses.Add(analysis);
+                    stockContext.SaveChanges();
                 }
-                //Histogram just peaked
-                if (index == count - 2)
-                {
-                    return CalculateSellCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
-                }
-            }
-            else
-            {
-                //Histogram changes from positive to negative
-                if (index == count - 1 && Math.Sign(array[count - 2].Histogram) != sign)
-                {
-                    return CalculateSellCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
-                }
-                //Histogram just bottumed
-                if (index == count - 2)
-                {
-                    return 0;//CalculateBuyCertainty(orderedTransactions, array, index, sign, stockKey, startTime, endTime);
-                }
+                var action = (int)pattern;
+                if (action > 0 || (action == 0 && analysis.MACD > 0 && analysis.Signal > 0))
+                    return CalculateBuyCertainty(orderedTransactions, analysis, stockKey, startTime, endTime);
+                if (action < 0 || (action == 0 && analysis.MACD < 0 && analysis.Signal < 0))
+                    return CalculateSellCertainty(orderedTransactions, analysis, stockKey, startTime, endTime);
             }
             return 0;
         }
 
-        private double CalculateSellCertainty(IList<TransactionData> orderedTransactions, MovingAverageConvergenceDivergence[] array, int index, int sign, int stockKey, DateTime startTime, DateTime endTime)
+        private double CalculateSellCertainty(IList<TransactionData> orderedTransactions, MovingAverageConvergenceDivergenceAnalysis analysis, int stockKey, DateTime startTime, DateTime endTime)
         {
             Action = Action.Sell;
             var longTrendChannel = stockTask.GetChannel(stockKey, longTerm, startTime, endTime);
@@ -153,7 +141,7 @@ namespace Market.Suggestions.MACD
             return 1;
         }
 
-        private double CalculateBuyCertainty(IList<TransactionData> orderedTransactions, MovingAverageConvergenceDivergence[] array, int index, int sign, int stockKey, DateTime startTime, DateTime endTime)
+        private double CalculateBuyCertainty(IList<TransactionData> orderedTransactions, MovingAverageConvergenceDivergenceAnalysis analysis, int stockKey, DateTime startTime, DateTime endTime)
         {
             ////All MACD lines are below zero, no buy signal
             //if (sign < 0 && array[index].MACD < 0 && array[index].Signal < 0)
@@ -223,25 +211,6 @@ namespace Market.Suggestions.MACD
                     return 0;
             }
             return 0;
-        }
-
-        private int GetHistogramSign(MovingAverageConvergenceDivergence[] array, out double histogram, out int index)
-        {
-            int count = array.Length;
-            int sign = Math.Sign(array[count - 1].Histogram);
-            histogram = 0;
-            index = count - 1;
-            for (int i = count - 1; i > 0; i--)
-            {
-                if (sign != Math.Sign(array[i].Histogram))
-                    break;
-                if (histogram < Math.Abs(array[i].Histogram))
-                {
-                    histogram = Math.Abs(array[i].Histogram);
-                    index = i;
-                }
-            }
-            return sign;
         }
     }
 }

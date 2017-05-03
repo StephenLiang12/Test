@@ -10,30 +10,6 @@ namespace Market.TestFixture.Analyzer
     public class MovingAverageConvergenceDivergenceTestFixture : DbContextTestFixtureBase
     {
         [TestMethod]
-        [Ignore]
-        public void FindSpecialPoints()
-        {
-            int stockKey = 456;
-            StockContext context = new StockContext();
-            context.Database.ExecuteSqlCommand(
-                "Delete from MovingAverageConvergenceDivergenceAnalysis where StockKey = " + stockKey);
-            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey).OrderBy(m => m.TimeStamp).ToList();
-            for (int i = 200; i < list.Count; i++)
-            {
-                var array = list.GetFrontPartial(i).ToArray();
-                MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
-                var result = analyzer.Analyze(array);
-                if (result != MovingAverageConvergenceDivergenceFeature.Unkown)
-                {
-                    var analysis = array[array.Length - 1].CopyToAnalysis();
-                    analysis.Feature = result;
-                    context.MovingAverageConvergenceDivergenceAnalyses.Add(analysis);
-                    context.SaveChanges();
-                }
-            }
-        }
-
-        [TestMethod]
         public void AbleToFindRiseAboveZero()
         {
             int stockKey = 96;
@@ -185,6 +161,26 @@ namespace Market.TestFixture.Analyzer
             var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= new DateTime(2016, 11, 1) && m.TimeStamp <= new DateTime(2017, 4, 3)).OrderBy(m => m.TimeStamp).ToList();
             MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
             Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.RiseFromZero, analyzer.Analyze(list));
+        }
+
+        [TestMethod]
+        public void ShouldNotTreatSecondDayOfRiseAboveZeroAsRiseFromZero()
+        {
+            int stockKey = 477;
+            StockContext context = new StockContext();
+            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= new DateTime(2016, 10, 1) && m.TimeStamp <= new DateTime(2017, 3, 2)).OrderBy(m => m.TimeStamp).ToList();
+            MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
+            Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.Unkown, analyzer.Analyze(list));
+        }
+
+        [TestMethod]
+        public void IfPeakDoesNotDropMuchShouldNotTreatIsAsRiseFromZero()
+        {
+            int stockKey = 613;
+            StockContext context = new StockContext();
+            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= new DateTime(2016, 11, 1) && m.TimeStamp <= new DateTime(2017, 5, 1)).OrderBy(m => m.TimeStamp).ToList();
+            MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
+            Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.Unkown, analyzer.Analyze(list));
         }
 
     }

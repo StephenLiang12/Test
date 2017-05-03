@@ -543,7 +543,7 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             SortedList<DateTime, Suggestion> suggestionSortedList = new SortedList<DateTime, Suggestion>();
-            int stockKey = 477;
+            int stockKey = 479;
             double expectedAmmount = 10000;
             double existPercentage = 10;
             foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stockKey))
@@ -758,7 +758,7 @@ namespace Market.TestFixture
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 477)
+                if (stock.Key != 479)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();

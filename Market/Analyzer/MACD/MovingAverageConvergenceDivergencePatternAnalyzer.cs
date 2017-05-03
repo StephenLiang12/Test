@@ -86,16 +86,16 @@ namespace Market.Analyzer.MACD
             sign = GetHistogramAbsBottom(array, peakIndex, out bottomIndex);
             if (sign > 0)
             {
-                //Histogram just bottomed above zero
-                if (bottomIndex == count - 2 && Math.Sign(array[bottomIndex - 1].Histogram) == sign && Math.Sign(array[bottomIndex + 1].Histogram) == sign)
+                //Histogram just bottomed above zero and the bottom histogram is less than the half of peak histogram
+                if (bottomIndex == count - 2 && Math.Sign(array[bottomIndex - 1].Histogram) == sign && Math.Sign(array[bottomIndex + 1].Histogram) == sign && array[bottomIndex].Histogram < array[peakIndex].Histogram/2)
                 {
                     return MovingAverageConvergenceDivergenceFeature.RiseFromZero;
                 }
             }
             else
             {
-                //Histogram just peaked below zero
-                if (bottomIndex == count - 2 && Math.Sign(array[bottomIndex - 1].Histogram) == sign && Math.Sign(array[bottomIndex + 1].Histogram) == sign)
+                //Histogram just peaked below zero and the abs bottom histogram is less than the half of abs peak histogram
+                if (bottomIndex == count - 2 && Math.Sign(array[bottomIndex - 1].Histogram) == sign && Math.Sign(array[bottomIndex + 1].Histogram) == sign && Math.Abs(array[bottomIndex].Histogram) < Math.Abs(array[peakIndex].Histogram / 2))
                 {
                     return MovingAverageConvergenceDivergenceFeature.RetrieveFromZero;
                 }

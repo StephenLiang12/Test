@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Market.Analyzer;
+using Market.Analyzer.MACD;
 using Market.Exceptions;
 using Market.Tasks;
 using Market.TestFixture.Data;
@@ -369,6 +370,29 @@ namespace Market.TestFixture.Tasks
                 }
                 catch (Exception)
                 {
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FindSpecialPoints()
+        {
+            int stockKey = 96;
+            StockContext context = new StockContext();
+            context.Database.ExecuteSqlCommand(
+                "Delete from MovingAverageConvergenceDivergenceAnalysis where StockKey = " + stockKey);
+            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey).OrderBy(m => m.TimeStamp).ToList();
+            for (int i = 200; i < list.Count; i++)
+            {
+                var array = list.GetFrontPartial(i).ToArray();
+                MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
+                var result = analyzer.Analyze(array);
+                if (result != MovingAverageConvergenceDivergenceFeature.Unkown)
+                {
+                    var analysis = array[array.Length - 1].CopyToAnalysis();
+                    analysis.Feature = result;
+                    context.MovingAverageConvergenceDivergenceAnalyses.Add(analysis);
+                    context.SaveChanges();
                 }
             }
         }
