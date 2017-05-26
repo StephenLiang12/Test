@@ -8,6 +8,14 @@ namespace Market.TestFixture.Data
 {
     public class SampleDataReader
     {
+        public static StreamReader GoogleFinanceTransactionDataReader
+        {
+            get
+            {
+                return new StreamReader(GetEmbeddedFile("Toronto-Dominion Bank TSETD historical prices – Google Finance.htm"));
+            }
+        }
+
         public static StreamReader YahooFinanceTransactionDataReader
         {
             get

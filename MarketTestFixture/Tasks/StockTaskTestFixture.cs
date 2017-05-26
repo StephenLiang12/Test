@@ -22,7 +22,7 @@ namespace Market.TestFixture.Tasks
         public void AbleToGetTransactionDataFromInternet()
         {
             StockTask task = new StockTask();
-            Assert.AreEqual(HttpStatusCode.OK, task.GetTransactionDataFromInternet("G.TO"));
+            Assert.AreEqual(HttpStatusCode.OK, task.GetTransactionDataFromInternet("ACD.TO"));
         }
 
         [TestMethod]
@@ -61,9 +61,13 @@ namespace Market.TestFixture.Tasks
                 }
                 catch (IOException)
                 {
-                    Thread.Sleep(10*60*1000);
+                    Thread.Sleep(10 * 60 * 1000);
                     Console.WriteLine("Retry on {0}", stock.Id);
                     task.GetTransactionDataFromInternet(stock.Id);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error on {0}: {1}", stock.Id, ex.Message);
                 }
             }
         }

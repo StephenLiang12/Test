@@ -75,7 +75,7 @@ namespace Market.Tasks
             DateTime startDateTime = new DateTime(2011, 1, 1);
             if (context.TransactionData.Any(t => t.StockKey == stockKey))
             {
-                DateTime lastDateTime = context.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+                DateTime lastDateTime = context.OriginalTransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
                 startDateTime = lastDateTime.AddDays(1);
             }
             if (startDateTime <= DateTime.Today)
@@ -84,61 +84,64 @@ namespace Market.Tasks
                 WebRequest request = WebRequest.Create(webRequest.GenerateTransactionDataWebRequestUrl());
                 request.Method = "GET";
                 ((HttpWebRequest) request).UserAgent = ".NET Framework Client";
-                WebResponse response;
+                HttpStatusCode statusCode = HttpStatusCode.OK;
                 try
                 {
-                    response = request.GetResponse();
+                    using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
+                    {
+                        statusCode = response.StatusCode;
+                        if (statusCode == HttpStatusCode.OK)
+                        {
+                            var dataStream = response.GetResponseStream();
+                            StreamReader reader = new StreamReader(dataStream);
+                            //var writer = File.CreateText(@"c:\Test.txt");
+                            //do
+                            //{
+                            //    string line = reader.ReadLine();
+                            //    writer.WriteLine(line);
+                            //} while (reader.EndOfStream == false);
+                            //writer.Close();
+                            if (context.Stocks.Any(s => s.Id == stockId) == false)
+                            {
+                                throw new ArgumentException("Unknow Stock Id {0}", stockId);
+                            }
+                            var stock = context.Stocks.First(s => s.Id == stockId);
+                            string firstLine = reader.ReadLine();
+                            double sumOfVolume = 0;
+                            int count = 0;
+                            OriginalTransactionData data;
+                            while (webRequest.GetTransactionData(reader, out data))
+                            {
+                                data.StockKey = stock.Key;
+                                if (context.OriginalTransactionData.Any(
+                                        d =>
+                                            d.StockKey == data.StockKey && d.TimeStamp == data.TimeStamp &&
+                                            d.Period == data.Period) == false)
+                                {
+                                    context.OriginalTransactionData.Add(data);
+                                    var d = data.GetTransactionData();
+                                    context.TransactionData.Add(d);
+                                }
+                                sumOfVolume += data.Volume;
+                                count++;
+                            }
+                            if (count == 0)
+                                return statusCode;
+                            stock.AvgVolume = Math.Round(sumOfVolume / count);
+                            stock.AbleToGetTransactionDataFromWeb = true;
+                            context.SaveChanges();
+                            reader.Close();
+                            response.Close();
+                        }
+                    }
                 }
-                catch (WebException)
+                catch (WebException ex)
                 {
                     var stock = context.Stocks.First(s => s.Id == stockId);
+                    Console.WriteLine("Error on {0}: {1}", stock.Id, ex.Message);
                     stock.AbleToGetTransactionDataFromWeb = false;
                     context.SaveChanges();
                     return HttpStatusCode.NotFound;
-                }
-                var statusCode = ((HttpWebResponse) response).StatusCode;
-                if (statusCode == HttpStatusCode.OK)
-                {
-                    var dataStream = response.GetResponseStream();
-                    StreamReader reader = new StreamReader(dataStream);
-                    //var writer = File.CreateText(@"c:\Test.txt");
-                    //do
-                    //{
-                    //    string line = reader.ReadLine();
-                    //    writer.WriteLine(line);
-                    //} while (reader.EndOfStream == false);
-                    //writer.Close();
-                    if (context.Stocks.Any(s => s.Id == stockId) == false)
-                    {
-                        throw new ArgumentException("Unknow Stock Id {0}", stockId);
-                    }
-                    var stock = context.Stocks.First(s => s.Id == stockId);
-                    string firstLine = reader.ReadLine();
-                    double sumOfVolume = 0;
-                    int count = 0;
-                    OriginalTransactionData data;
-                    while (webRequest.GetTransactionData(reader, out data))
-                    {
-                        data.StockKey = stock.Key;
-                        if (context.OriginalTransactionData.Any(
-                                d =>
-                                    d.StockKey == data.StockKey && d.TimeStamp == data.TimeStamp &&
-                                    d.Period == data.Period) == false)
-                        {
-                            context.OriginalTransactionData.Add(data);
-                            var d = data.GetTransactionData();
-                            context.TransactionData.Add(d);
-                        }
-                        sumOfVolume += data.Volume;
-                        count++;
-                    }
-                    if (count == 0)
-                        return statusCode;
-                    stock.AvgVolume = Math.Round(sumOfVolume/count);
-                    stock.AbleToGetTransactionDataFromWeb = true;
-                    context.SaveChanges();
-                    reader.Close();
-                    response.Close();
                 }
                 return statusCode;
             }
