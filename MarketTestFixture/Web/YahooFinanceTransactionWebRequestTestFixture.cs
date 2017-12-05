@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using Market.TestFixture.Data;
 using Market.Web;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,28 +10,152 @@ namespace Market.TestFixture.Web
     [TestClass]
     public class YahooFinanceTransactionWebRequestTestFixture
     {
+        private const string SetCookieKey = "Set-Cookie";
+        private const string ExpireKey = "expires";
+        private const string PathKey = "path";
+        private const string DomainKey = "domain";
+        private const string CrumbStore = "CrumbStore";
+        private const string Crumb = "crumb";
+
         [TestMethod]
         public void AbleToGetWebRequestUrl()
         {
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
-            webRequest.StockId = "TD.TO";
-            webRequest.EndDate = new DateTime(2014,2,1);
-            webRequest.StartDate = new DateTime(2014,1,1);
-            string expectedUrl =
-                "http://ichart.yahoo.com/table.csv?s=TD.TO&a=0&b=1&c=2014&d=1&e=1&f=2014&g=d&ignore=.csv";
-            Assert.AreEqual(expectedUrl, webRequest.GenerateTransactionDataWebRequestUrl());
+            webRequest.StockId = "ABB.TO";
+            webRequest.EndDate = new DateTime(2017, 9, 7);
+            webRequest.StartDate = new DateTime(2017, 9, 5);
+            Console.WriteLine(webRequest.GenerateTransactionDataWebRequestUrl());
         }
 
         [TestMethod]
-        [Ignore]
-        public void AbleToGetStockInfo()
+        public void Test()
         {
+            string cookieString = string.Empty;
+            WebRequest request = WebRequest.Create("https://ca.finance.yahoo.com/quote/TD.TO/history?p=TD.TO");
+            request.Method = "GET";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            //request.UseDefaultCredentials = true;
+            //request.PreAuthenticate = true;
+            //request.Credentials = CredentialCache.DefaultCredentials;
+            Cookie cookie = null;
+            string crumb = null;
+            HttpStatusCode statusCode = HttpStatusCode.OK;
+            try
+            {
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    statusCode = response.StatusCode;
+                    if (statusCode == HttpStatusCode.OK)
+                    {
+                        foreach (string header in response.Headers)
+                        {
+                            Console.WriteLine("{0}: {1}", header, response.Headers[header]);
+                        }
+                        cookieString = response.Headers[SetCookieKey];
+                        Console.WriteLine(cookieString);
+                        cookie = GetCookie(cookieString);
+                        var dataStream = response.GetResponseStream();
+                        StreamReader reader = new StreamReader(dataStream);
+                        var writer = File.CreateText(@"c:\Test.txt");
+                        do
+                        {
+                            string line = reader.ReadLine();
+                            if (string.IsNullOrEmpty(line) == false && line.Contains(CrumbStore))
+                            {
+                                int cs = line.IndexOf(CrumbStore);
+                                int cr = line.IndexOf(Crumb, cs + 10);
+                                int cl = line.IndexOf(":", cr + 1);
+                                int q1 = line.IndexOf("\"", cl + 1);
+                                int q2 = line.IndexOf("\"", q1 + 1);
+                                crumb = line.Substring(q1 + 1, q2 - q1 - 1);
+                            }
+                            writer.WriteLine(line);
+                        } while (reader.EndOfStream == false);
+                        writer.Close();
+                        reader.Close();
+                        response.Close();
+                        Console.WriteLine(crumb);
+                    }
+                }
+            }
+            catch (WebException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
-            var stock = webRequest.GetStockInfo(SampleDataReader.YahooFinanceTransactionDataReader);
-            Assert.AreEqual("TD.TO", stock.Id);
-            Assert.AreEqual("TORONTO-DOMINION BANK", stock.Name);
-            Assert.AreEqual(Period.Day, webRequest.TransactionPeriod);
-            Assert.AreEqual(717800, stock.AvgVolume);
+            webRequest.StockId = "TD.TO";
+            webRequest.EndDate = new DateTime(2017, 9, 7);
+            webRequest.StartDate = new DateTime(2017, 9, 5);
+            var url = webRequest.GenerateTransactionDataWebRequestUrl() + "&crumb=" + crumb;
+            Console.WriteLine(url);
+            request = WebRequest.Create(url);
+            request.Method = "GET";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            request.Headers.Add(HttpRequestHeader.Cookie, cookieString);
+            CookieContainer cookieContainer = new CookieContainer();
+            ((HttpWebRequest)request).CookieContainer = cookieContainer;
+            if (cookie != null)
+                cookieContainer.Add(cookie);
+            //request.UseDefaultCredentials = true;
+            //request.PreAuthenticate = true;
+            //request.Credentials = CredentialCache.DefaultCredentials;
+            statusCode = HttpStatusCode.OK;
+            try
+            {
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    statusCode = response.StatusCode;
+                    if (statusCode == HttpStatusCode.OK)
+                    {
+                        var dataStream = response.GetResponseStream();
+                        StreamReader reader = new StreamReader(dataStream);
+                        var writer = File.CreateText(@"c:\Test.txt");
+                        do
+                        {
+                            string line = reader.ReadLine();
+                            writer.WriteLine(line);
+                        } while (reader.EndOfStream == false);
+                        writer.Close();
+                        reader.Close();
+                        response.Close();
+                    }
+                }
+            }
+            catch (WebException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private Cookie GetCookie(string cookieString)
+        {
+            var items = cookieString.Split(';');
+            if (items.Length == 0)
+                return null;
+            var indexOfEquator = items[0].IndexOf("=");
+            var name = items[0].Substring(0, indexOfEquator);
+            var value = items[0].Substring(indexOfEquator + 1, items[0].Length - indexOfEquator - 1);
+            Cookie cookie = new Cookie(name, value);
+            foreach (var item in items)
+            {
+                if (item.Trim().StartsWith(ExpireKey))
+                {
+                    indexOfEquator = item.IndexOf("=");
+                    var expireValue = item.Substring(indexOfEquator + 1, item.Length - indexOfEquator - 1);
+                    cookie.Expires = Convert.ToDateTime(expireValue);
+                }
+                if (item.Trim().StartsWith(PathKey))
+                {
+                    indexOfEquator = item.IndexOf("=");
+                    cookie.Path = item.Substring(indexOfEquator + 1, item.Length - indexOfEquator - 1);
+                }
+                if (item.Trim().StartsWith(DomainKey))
+                {
+                    indexOfEquator = item.IndexOf("=");
+                    cookie.Domain = item.Substring(indexOfEquator + 1, item.Length - indexOfEquator - 1);
+                }
+            }
+            return cookie;
         }
 
         [TestMethod]
@@ -42,27 +167,12 @@ namespace Market.TestFixture.Web
             OriginalTransactionData data;
             bool hasData = webRequest.GetTransactionData(reader, out data);
             Assert.IsTrue(hasData);
-            Assert.AreEqual(new DateTime(2014, 9, 29), data.TimeStamp);
-            Assert.AreEqual(3.55, data.Close);
-            Assert.AreEqual(3.57, data.High);
-            Assert.AreEqual(3.17, data.Low);
-            Assert.AreEqual(3.32, data.Open);
-            Assert.AreEqual(23800, data.Volume);
-        }
-
-        [TestMethod]
-        public void AbleToGetSplit()
-        {
-            YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
-            StreamReader reader = SampleDataReader.YahooFinanceDividendReader;
-            string firstLine = reader.ReadLine();
-            Split split;
-            bool hasData = webRequest.GetSplit(reader, out split);
-            Assert.IsTrue(hasData);
-            Assert.AreEqual(new DateTime(2014, 2, 3), split.TimeStamp);
-            Assert.AreEqual(2, split.SplitRatio);
-            hasData = webRequest.GetSplit(reader, out split);
-            Assert.IsFalse(hasData);
+            Assert.AreEqual(new DateTime(2014, 1, 2), data.TimeStamp);
+            Assert.AreEqual(49.44, data.Close);
+            Assert.AreEqual(49.7, data.High);
+            Assert.AreEqual(49.02, data.Low);
+            Assert.AreEqual(49.67, data.Open);
+            Assert.AreEqual(3221200, data.Volume);
         }
     }
 }

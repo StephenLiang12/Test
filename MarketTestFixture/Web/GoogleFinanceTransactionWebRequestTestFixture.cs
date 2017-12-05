@@ -15,9 +15,13 @@ namespace Market.TestFixture.Web
         {
             GoogleFinanceTransactionWebRequest webRequest = new GoogleFinanceTransactionWebRequest();
             webRequest.StockId = "TD.TO";
-            webRequest.EndDate = new DateTime(2014, 2, 1);
-            webRequest.StartDate = new DateTime(2014, 1, 1);
+            webRequest.EndDate = new DateTime(2017, 9, 6);
+            webRequest.StartDate = new DateTime(2017, 2, 1);
             Console.WriteLine(webRequest.GenerateTransactionDataWebRequestUrl());
+            var dateTime1 = new DateTime(2017, 9, 2);
+            var dateTime2 = new DateTime(2017, 9, 7);
+            Console.WriteLine(dateTime2.AddSeconds(-1504764000));
+            Console.WriteLine((dateTime2.AddSeconds(-1504764000) - dateTime1).TotalSeconds);
         }
 
         [TestMethod]

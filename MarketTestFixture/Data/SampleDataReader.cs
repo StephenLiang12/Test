@@ -20,7 +20,7 @@ namespace Market.TestFixture.Data
         {
             get
             {
-                return new StreamReader(GetEmbeddedFile("YahooFinanceData.txt"));
+                return new StreamReader(GetEmbeddedFile("TD.TO.csv"));
             }
         }
 

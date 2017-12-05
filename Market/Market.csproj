@@ -145,6 +145,7 @@
     <Compile Include="Web\Factory\ITransactionWebRequestFactory.cs" />
     <Compile Include="Web\GoogleFinanceTransactionWebRequest.cs" />
     <Compile Include="Web\TransactionWebRequest.cs" />
+    <Compile Include="Web\YahooFinanceIchartTransactionWebRequest.cs" />
     <Compile Include="Web\YahooFinanceTransactionWebRequest.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -83,7 +83,10 @@ namespace Market.Tasks
                 var webRequest = webRequestFactory.CreateTransactionWebRequest(stockId, startDateTime);
                 WebRequest request = WebRequest.Create(webRequest.GenerateTransactionDataWebRequestUrl());
                 request.Method = "GET";
-                ((HttpWebRequest) request).UserAgent = ".NET Framework Client";
+                ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+                request.UseDefaultCredentials = true;
+                request.PreAuthenticate = true;
+                request.Credentials = CredentialCache.DefaultCredentials;
                 HttpStatusCode statusCode = HttpStatusCode.OK;
                 try
                 {

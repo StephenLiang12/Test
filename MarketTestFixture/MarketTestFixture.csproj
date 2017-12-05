@@ -85,6 +85,7 @@
     <Compile Include="Suggestions\ShortTermSecondBottomTouchAfterLongDownSuggestionAnalyzerTestFixture.cs" />
     <Compile Include="Tasks\StockTaskTestFixture.cs" />
     <Compile Include="Web\GoogleFinanceTransactionWebRequestTestFixture.cs" />
+    <Compile Include="Web\YahooFinanceIChartTransactionWebRequestTestFixture.cs" />
     <Compile Include="Web\YahooFinanceTransactionWebRequestTestFixture.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +100,7 @@
     </None>
     <EmbeddedResource Include="Data\EodData.csv" />
     <EmbeddedResource Include="Data\TSX.csv" />
+    <EmbeddedResource Include="Data\TD.TO.csv" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

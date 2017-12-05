@@ -183,5 +183,14 @@ namespace Market.TestFixture.Analyzer
             Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.Unkown, analyzer.Analyze(list));
         }
 
+        [TestMethod]
+        public void Test()
+        {
+            int stockKey = 96;
+            StockContext context = new StockContext();
+            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= new DateTime(2017, 3, 1) && m.TimeStamp <= new DateTime(2017, 9, 15)).OrderBy(m => m.TimeStamp).ToList();
+            MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
+            Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.Peak, analyzer.Analyze(list));
+        }
     }
 }
