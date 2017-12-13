@@ -24,6 +24,14 @@ namespace Market.TestFixture.Data
             }
         }
 
+        public static StreamReader YahooFinanceSplitDataReader
+        {
+            get
+            {
+                return new StreamReader(GetEmbeddedFile("YahooFinanceSplit.csv"));
+            }
+        }
+
         public static StreamReader YahooFinanceDividendReader
         {
             get

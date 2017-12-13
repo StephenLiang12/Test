@@ -101,6 +101,7 @@
     <EmbeddedResource Include="Data\EodData.csv" />
     <EmbeddedResource Include="Data\TSX.csv" />
     <EmbeddedResource Include="Data\TD.TO.csv" />
+    <EmbeddedResource Include="Data\YahooFinanceSplit.csv" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

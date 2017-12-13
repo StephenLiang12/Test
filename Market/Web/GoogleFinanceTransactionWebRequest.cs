@@ -19,7 +19,7 @@ namespace Market.Web
             return string.Format(TransactionUrlFormat, RemoveTOAtEnd(StockId), ConverMonthToAbreviation(StartDate), StartDate.Day, StartDate.Year, ConverMonthToAbreviation(EndDate), EndDate.Day, EndDate.Year);
         }
 
-        public override string GenerateDividendWebRequestUrl()
+        public override string GenerateSplitWebRequestUrl()
         {
             throw new System.NotImplementedException();
         }

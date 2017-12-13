@@ -68,6 +68,7 @@ namespace Market.TestFixture.Web
                                 int q1 = line.IndexOf("\"", cl + 1);
                                 int q2 = line.IndexOf("\"", q1 + 1);
                                 crumb = line.Substring(q1 + 1, q2 - q1 - 1);
+                                crumb = crumb.Replace(@"\u002F", "/");
                             }
                             writer.WriteLine(line);
                         } while (reader.EndOfStream == false);
@@ -83,7 +84,7 @@ namespace Market.TestFixture.Web
                 Console.WriteLine(ex.Message);
             }
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
-            webRequest.StockId = "TD.TO";
+            webRequest.StockId = "AAR-UN.TO";
             webRequest.EndDate = new DateTime(2017, 9, 7);
             webRequest.StartDate = new DateTime(2017, 9, 5);
             var url = webRequest.GenerateTransactionDataWebRequestUrl() + "&crumb=" + crumb;
@@ -91,7 +92,7 @@ namespace Market.TestFixture.Web
             request = WebRequest.Create(url);
             request.Method = "GET";
             ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
-            request.Headers.Add(HttpRequestHeader.Cookie, cookieString);
+            //request.Headers.Add(HttpRequestHeader.Cookie, cookieString);
             CookieContainer cookieContainer = new CookieContainer();
             ((HttpWebRequest)request).CookieContainer = cookieContainer;
             if (cookie != null)
@@ -159,6 +160,16 @@ namespace Market.TestFixture.Web
         }
 
         [TestMethod]
+        public void AbleToGetSplitFromInternet()
+        {
+            YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
+            webRequest.StockId = "HOU.TO";
+            webRequest.StartDate = new DateTime(2016,1,1);
+            webRequest.EndDate = new DateTime(2017,1,1);
+            webRequest.GetSplitFromInternet();
+        }
+
+        [TestMethod]
         public void AbleToGetTransactionData()
         {
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
@@ -173,6 +184,19 @@ namespace Market.TestFixture.Web
             Assert.AreEqual(49.02, data.Low);
             Assert.AreEqual(49.67, data.Open);
             Assert.AreEqual(3221200, data.Volume);
+        }
+
+        [TestMethod]
+        public void AbleToGetSplit()
+        {
+            YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
+            StreamReader reader = SampleDataReader.YahooFinanceSplitDataReader;
+            string firstLine = reader.ReadLine();
+            Split split;
+            bool hasData = webRequest.GetSplit(reader, out split);
+            Assert.IsTrue(hasData);
+            Assert.AreEqual(new DateTime(2016, 5, 30), split.TimeStamp);
+            Assert.AreEqual(0.5, split.SplitRatio);
         }
     }
 }

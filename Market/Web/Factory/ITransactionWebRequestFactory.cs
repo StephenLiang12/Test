@@ -17,7 +17,7 @@ namespace Market.Web.Factory
 
         public TransactionWebRequest CreateTransactionWebRequest(string stockId, DateTime startDateTime)
         {
-            var webRequest = new GoogleFinanceTransactionWebRequest();
+            var webRequest = new YahooFinanceTransactionWebRequest();
             webRequest.StockId = stockId;
             webRequest.EndDate = DateTime.Today;
             webRequest.StartDate = startDateTime;

@@ -6,8 +6,8 @@ namespace Market.Tasks
 {
     public interface IStockTask
     {
-        HttpStatusCode GetTransactionDataFromInternet(string stockId);
-        HttpStatusCode GetSplitFromInternet(string stockId);
+        int GetTransactionDataFromInternet(string stockId);
+        int GetSplitFromInternet(string stockId);
         Channel GetChannel(int stockKey, int length, DateTime startTime, DateTime endTime);
         Channel GetPreviousChannel(int stockKey, int length, DateTime endTime);
     }

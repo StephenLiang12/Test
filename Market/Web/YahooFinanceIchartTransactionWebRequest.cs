@@ -24,7 +24,7 @@ namespace Market.Web
             return string.Format(TransactionUrlFormat, StockId, StartDate.Month - 1, StartDate.Day, StartDate.Year, EndDate.Month - 1, EndDate.Day, EndDate.Year, "d");
         }
 
-        public override string GenerateDividendWebRequestUrl()
+        public override string GenerateSplitWebRequestUrl()
         {
             return string.Format(DividendUrlFormat, StockId, StartDate.Month - 1, StartDate.Day, StartDate.Year, EndDate.Month - 1, EndDate.Day, EndDate.Year);
         }
