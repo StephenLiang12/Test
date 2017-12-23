@@ -22,91 +22,91 @@ namespace Market.Analyzer.Channels
             channel.ResistanceStartPrice = orderedTransactions.Max(t => t.High);
             channel.SupportStartPrice = orderedTransactions.Min(t => t.Low);
             channel.Length = orderedTransactions.Count;
-            channel.ChannelTrend =
-                movingAverageAnalyzer.AnalyzeMovingTrend(GetMovingAverage(orderedTransactions).Averages);
+            var movingAverage = GetMovingAverage(orderedTransactions);
+            channel.ChannelTrend = movingAverageAnalyzer.AnalyzeMovingTrend(movingAverage.Averages);
             channel = BuildSupportLine(channel, orderedTransactions);
             channel = BuildResistanceLine(channel, orderedTransactions);
             channel.StockKey = orderedTransactions[0].StockKey;
             channel.StartDate = orderedTransactions[0].TimeStamp;
             channel.EndDate = orderedTransactions[orderedTransactions.Count - 1].TimeStamp;
-            if (channel.SupportChannelRatio > 0)
-            {
-                var upPercentage = channel.SupportChannelRatio/channel.SupportStartPrice;
-                if (upPercentage > 0.001)
-                {
-                    if (channel.ChannelTrend <= 0)
-                    {
-                        switch (channel.ChannelTrend)
-                        {
-                            case Trend.Bottom:
-                            case Trend.BottomDown:
-                            case Trend.Down:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomUp);
-                                channel.ChannelTrend = Trend.BottomUp;
-                                break;
-                            case Trend.VibrationDown:
-                            case Trend.Vibration:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.VibrationUp);
-                                channel.ChannelTrend = Trend.VibrationUp;
-                                break;
-                            case Trend.Top:
-                            case Trend.TopDown:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopUp);
-                                channel.ChannelTrend = Trend.TopUp;
-                                break;
-                            case Trend.TopBottom:
-                            case Trend.TopBottomDown:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopBottomUp);
-                                channel.ChannelTrend = Trend.TopBottomUp;
-                                break;
-                            case Trend.BottomTop:
-                            case Trend.BottomTopDown:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomTopUp);
-                                channel.ChannelTrend = Trend.BottomTopUp;
-                                break;
-                        }
-                    }
-                }
-            }
-            if (channel.ResistanceChannelRatio < 0)
-            {
-                var downPercentage = channel.ResistanceChannelRatio/channel.ResistanceStartPrice;
-                if (downPercentage < -0.001)
-                {
-                    if (channel.ChannelTrend >= 0)
-                    {
-                        switch (channel.ChannelTrend)
-                        {
-                            case Trend.Bottom:
-                            case Trend.BottomUp:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomDown);
-                                channel.ChannelTrend = Trend.BottomDown;
-                                break;
-                            case Trend.VibrationUp:
-                            case Trend.Vibration:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.VibrationDown);
-                                channel.ChannelTrend = Trend.VibrationDown;
-                                break;
-                            case Trend.Top:
-                            case Trend.TopUp:
-                            case Trend.Up:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopDown);
-                                channel.ChannelTrend = Trend.TopDown;
-                                break;
-                            case Trend.TopBottom:
-                            case Trend.TopBottomUp:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopBottomDown);
-                                channel.ChannelTrend = Trend.TopBottomDown;
-                                break;
-                            case Trend.BottomTop:
-                            case Trend.BottomTopUp:
-                                Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomTopDown);
-                                channel.ChannelTrend = Trend.BottomTopDown;
-                                break;
-                        }
-                    }
-                }
-            }
+            //if (channel.SupportChannelRatio > 0)
+            //{
+            //    var upPercentage = channel.SupportChannelRatio/channel.SupportStartPrice;
+            //    if (upPercentage > 0.001)
+            //    {
+            //        if (channel.ChannelTrend <= 0)
+            //        {
+            //            switch (channel.ChannelTrend)
+            //            {
+            //                case Trend.Bottom:
+            //                case Trend.BottomDown:
+            //                case Trend.Down:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomUp);
+            //                    channel.ChannelTrend = Trend.BottomUp;
+            //                    break;
+            //                case Trend.VibrationDown:
+            //                case Trend.Vibration:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.VibrationUp);
+            //                    channel.ChannelTrend = Trend.VibrationUp;
+            //                    break;
+            //                case Trend.Top:
+            //                case Trend.TopDown:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopUp);
+            //                    channel.ChannelTrend = Trend.TopUp;
+            //                    break;
+            //                case Trend.TopBottom:
+            //                case Trend.TopBottomDown:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopBottomUp);
+            //                    channel.ChannelTrend = Trend.TopBottomUp;
+            //                    break;
+            //                case Trend.BottomTop:
+            //                case Trend.BottomTopDown:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomTopUp);
+            //                    channel.ChannelTrend = Trend.BottomTopUp;
+            //                    break;
+            //            }
+            //        }
+            //    }
+            //}
+            //if (channel.ResistanceChannelRatio < 0)
+            //{
+            //    var downPercentage = channel.ResistanceChannelRatio/channel.ResistanceStartPrice;
+            //    if (downPercentage < -0.001)
+            //    {
+            //        if (channel.ChannelTrend >= 0)
+            //        {
+            //            switch (channel.ChannelTrend)
+            //            {
+            //                case Trend.Bottom:
+            //                case Trend.BottomUp:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomDown);
+            //                    channel.ChannelTrend = Trend.BottomDown;
+            //                    break;
+            //                case Trend.VibrationUp:
+            //                case Trend.Vibration:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.VibrationDown);
+            //                    channel.ChannelTrend = Trend.VibrationDown;
+            //                    break;
+            //                case Trend.Top:
+            //                case Trend.TopUp:
+            //                case Trend.Up:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopDown);
+            //                    channel.ChannelTrend = Trend.TopDown;
+            //                    break;
+            //                case Trend.TopBottom:
+            //                case Trend.TopBottomUp:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.TopBottomDown);
+            //                    channel.ChannelTrend = Trend.TopBottomDown;
+            //                    break;
+            //                case Trend.BottomTop:
+            //                case Trend.BottomTopUp:
+            //                    Console.WriteLine("{0} Channel for {1} starting on {2} was {3} changed to {4}", channel.Length, channel.StockKey, channel.StartDate, channel.ChannelTrend, Trend.BottomTopDown);
+            //                    channel.ChannelTrend = Trend.BottomTopDown;
+            //                    break;
+            //            }
+            //        }
+            //    }
+            //}
             return channel;
         }
 

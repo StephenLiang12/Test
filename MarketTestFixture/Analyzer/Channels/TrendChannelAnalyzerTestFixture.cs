@@ -15,7 +15,7 @@ namespace Market.TestFixture.Analyzer.Channels
             StockContext context = new StockContext();
             TrendChannelAnalyzer analyzer = new TrendChannelAnalyzer();
             IList<TransactionData> orderedList =
-                context.TransactionData.Where(t => t.StockKey == 378 && t.TimeStamp >= new DateTime(2011, 9, 8) && t.TimeStamp <= new DateTime(2012, 1, 31)).OrderBy(t => t.TimeStamp).ToList();
+                context.TransactionData.Where(t => t.StockKey == 5 && t.TimeStamp >= new DateTime(2015, 9, 15) && t.TimeStamp <= new DateTime(2016, 6, 29)).OrderBy(t => t.TimeStamp).ToList();
             try
             {
                 //var length = 200;

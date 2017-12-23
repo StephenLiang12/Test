@@ -43,7 +43,7 @@ namespace Market.Web
             //Console.WriteLine(url);
             var request = WebRequest.Create(url);
             request.Method = "GET";
-            ((HttpWebRequest) request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11";
             //request.Headers.Add(HttpRequestHeader.Cookie, cookieString);
             CookieContainer cookieContainer = new CookieContainer();
             ((HttpWebRequest) request).CookieContainer = cookieContainer;
@@ -60,8 +60,7 @@ namespace Market.Web
                     OriginalTransactionData data;
                     while (GetTransactionData(reader, out data))
                     {
-                        if (transactions.Any(
-                                d =>d.TimeStamp == data.TimeStamp && d.Period == data.Period) == false)
+                        if (transactions.Any(d =>d.TimeStamp == data.TimeStamp && d.Period == data.Period) == false)
                             transactions.Add(data);
                     }
                     reader.Close();
@@ -75,7 +74,7 @@ namespace Market.Web
         {
             WebRequest request = WebRequest.Create("https://ca.finance.yahoo.com/quote/TD.TO/history?p=TD.TO");
             request.Method = "GET";
-            ((HttpWebRequest) request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11";
             cookie = null;
             crumb = null;
             HttpStatusCode statusCode = HttpStatusCode.OK;
@@ -171,7 +170,7 @@ namespace Market.Web
             //Console.WriteLine(url);
             var request = WebRequest.Create(url);
             request.Method = "GET";
-            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11";
             CookieContainer cookieContainer = new CookieContainer();
             ((HttpWebRequest)request).CookieContainer = cookieContainer;
             if (cookie != null)

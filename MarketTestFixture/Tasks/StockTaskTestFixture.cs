@@ -49,11 +49,12 @@ namespace Market.TestFixture.Tasks
         }
 
         [TestMethod]
-        public void AbleToGetAllTmxTransactionDataFrbomInternet()
+        public void AbleToGetAllTmxTransactionDataFromInternet()
         {
             StockTask task = new StockTask();
             StockContext context = new StockContext();
-            foreach (var stock in context.Stocks.ToList())
+            //var stock = context.Stocks.First(s => s.Id == "CPG.TO");
+            foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
                 try
                 {
@@ -78,7 +79,7 @@ namespace Market.TestFixture.Tasks
             StockTask task = new StockTask();
             StockContext context = new StockContext();
             //task.GetSplitFromInternet("HOD.TO");
-            foreach (var stock in context.Stocks.ToList())
+            foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
                 if (stock.AbleToGetTransactionDataFromWeb)
                     task.GetSplitFromInternet(stock.Id);

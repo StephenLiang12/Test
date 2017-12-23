@@ -15,6 +15,135 @@ namespace Market.TestFixture
     public class IntegrationTest
     {
         [TestMethod]
+        public void TestChannelReverse()
+        {
+            string id = "ABX.TO";
+            StockContext context = new StockContext();
+            int stockKey = context.Stocks.First(s => s.Id == id).Key;
+            IList<Channel> channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 200)
+                .OrderBy(c => c.StartDate).ToList();
+            int maxDays200;
+            int minDays200;
+            int sumOfDays200;
+            int numberOfReverse200;
+            ReviewChannels(channels, context, out maxDays200, out minDays200, out sumOfDays200, out numberOfReverse200);
+            channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 100)
+                .OrderBy(c => c.StartDate).ToList();
+            int maxDays100;
+            int minDays100;
+            int sumOfDays100;
+            int numberOfReverse100;
+            ReviewChannels(channels, context, out maxDays100, out minDays100, out sumOfDays100, out numberOfReverse100);
+            channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 50)
+                .OrderBy(c => c.StartDate).ToList();
+            int maxDays50;
+            int minDays50;
+            int sumOfDays50;
+            int numberOfReverse50;
+            ReviewChannels(channels, context, out maxDays50, out minDays50, out sumOfDays50, out numberOfReverse50);
+            Console.WriteLine("200 Channels Reverse: {0}, Max Interval: {1}, Min Interval: {2}, Average Intervals: {3}", numberOfReverse200, maxDays200, minDays200, sumOfDays200/(double)numberOfReverse200);
+            Console.WriteLine("100 Channels Reverse: {0}, Max Interval: {1}, Min Interval: {2}, Average Intervals: {3}", numberOfReverse100, maxDays100, minDays100, sumOfDays100/(double)numberOfReverse100);
+            Console.WriteLine("50 Channels Reverse: {0}, Max Interval: {1}, Min Interval: {2}, Average Intervals: {3}", numberOfReverse50, maxDays50, minDays50, sumOfDays50/(double)50);
+        }
+
+        private static void ReviewChannels(IList<Channel> channels, StockContext context, out int maxDays, out int minDays,
+            out int sumOfDays, out int numberOfReverse)
+        {
+            Channel previousChannel = null;
+            maxDays = 0;
+            minDays = int.MaxValue;
+            sumOfDays = 0;
+            numberOfReverse = 0;
+            DateTime minStarTime = DateTime.Today, maxStartTime = DateTime.Today;
+            foreach (var channel in channels)
+            {
+                if (previousChannel == null || previousChannel.ChannelTrend.GetSign() == 0)
+                {
+                    previousChannel = channel;
+                    continue;
+                }
+                if ((previousChannel.ChannelTrend.GetSign() > 0 && channel.ChannelTrend.GetSign() < 0) ||
+                    (previousChannel.ChannelTrend.GetSign() < 0 && channel.ChannelTrend.GetSign() > 0))
+                {
+                    int days = context.TransactionData.Count(t => t.StockKey == previousChannel.StockKey && t.TimeStamp >= previousChannel.EndDate &&
+                                                                  t.TimeStamp <= channel.EndDate);
+                    if (maxDays < days)
+                    {
+                        maxDays = days;
+                        maxStartTime = previousChannel.StartDate;
+                    }
+                    if (minDays > days)
+                    {
+                        minDays = days;
+                        minStarTime = previousChannel.StartDate;
+                    }
+                    sumOfDays += days;
+                    numberOfReverse++;
+                    previousChannel = channel;
+                }
+            }
+            Console.WriteLine("Max Start Date: {0}, Min Start Date: {1}", maxStartTime, minStarTime);
+        }
+
+        [TestMethod]
+        public void RerunFromBeginning(int minStockKey, int maxStockKey)
+        {
+            StockContext context = new StockContext();
+            MACDSuggestionAnalyzer analyzer = new MACDSuggestionAnalyzer();
+            Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
+            foreach (var stock in context.Stocks.Where(s => s.Key>= minStockKey && s.Key <= maxStockKey).ToList())
+            {
+                IList<TransactionData> orderedList =
+                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+                int j = 200;
+                while (j < orderedList.Count)
+                {
+                    try
+                    {
+                        var partialList = orderedList.GetFrontPartial(j);
+                        if (analyzer.CalculateForecaseCertainty(partialList) > 0)
+                        {
+                            Suggestion suggestion = new Suggestion();
+                            suggestion.TimeStamp = orderedList[j - 1].TimeStamp;
+                            suggestion.StockKey = stock.Key;
+                            suggestion.StockId = stock.Id;
+                            suggestion.StockName = stock.Name;
+                            suggestion.ClosePrice = orderedList[j - 1].Close;
+                            suggestion.Volume = orderedList[j - 1].Volume;
+                            suggestion.CandleStickPattern = "Unknown";
+                            //suggestion.CandleStickPattern = partialPattern.Name;
+                            //suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
+                            //suggestion.Avg5Trend = partialMovingTrend5;
+                            //suggestion.Avg20Trend = movingTrend20;
+                            //suggestion.Avg200Trend = movingTrend200;
+                            //suggestion.PriceVsAvg5 = priceMovingAvg5;
+                            //suggestion.PriceVsAvg200 = priceMovingAvg200;
+                            //suggestion.Avg5VsAvg20 = movingAvg5_20;
+                            //suggestion.Avg50VsAvg200 = movingAvg50_200;
+                            suggestion.AnalyzerName = analyzer.Name;
+                            suggestion.SuggestedTerm = analyzer.Term;
+                            suggestion.SuggestedAction = analyzer.Action;
+                            if (context.Suggestions.Any(
+                                    s =>
+                                        s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
+                                        s.AnalyzerName == suggestion.AnalyzerName &&
+                                        s.SuggestedAction == suggestion.SuggestedAction &&
+                                        s.SuggestedTerm == suggestion.SuggestedTerm) == false)
+                            {
+                                context.Suggestions.Add(suggestion);
+                                context.SaveChanges();
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+                    j++;
+                }
+            }
+        }
+
+        [TestMethod]
         public void TestSuggestionAnalyzer()
         {
             StockContext context = new StockContext();
@@ -317,7 +446,7 @@ namespace Market.TestFixture
             //analyzers.Add(new LongTermBuyAfterLongTermPrepareSuggestionAnalyzer());
             analyzers.Add(macdSuggestionAnalyzer);
 
-            foreach (var stock in context.Stocks.ToList())
+            foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
                 if (stock.AbleToGetTransactionDataFromWeb == false)
                     continue;

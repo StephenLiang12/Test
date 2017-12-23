@@ -77,9 +77,9 @@ namespace Market.Tasks
             if (context.TransactionData.Any(t => t.StockKey == stockKey))
             {
                 DateTime lastDateTime = context.OriginalTransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
-                startDateTime = lastDateTime.AddDays(1);
+                startDateTime = lastDateTime;
             }
-            if (startDateTime <= DateTime.Today)
+            if (startDateTime < DateTime.Today)
             {
                 var webRequest = webRequestFactory.CreateTransactionWebRequest(stockId, startDateTime);
                 try
@@ -151,10 +151,10 @@ namespace Market.Tasks
             }
         }
 
-        public void CalculateMovingAverageConvergenceDivergence()
+        public void CalculateMovingAverageConvergenceDivergence(int minStockKey, int maxStockKey)
         {
             StockContext context = new StockContext();
-            foreach (var stock in context.Stocks)
+            foreach (var stock in context.Stocks.Where(s => s.Key >= minStockKey && s.Key <= maxStockKey))
             {
                 try
                 {

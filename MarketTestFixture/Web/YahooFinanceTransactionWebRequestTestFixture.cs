@@ -33,7 +33,7 @@ namespace Market.TestFixture.Web
             string cookieString = string.Empty;
             WebRequest request = WebRequest.Create("https://ca.finance.yahoo.com/quote/TD.TO/history?p=TD.TO");
             request.Method = "GET";
-            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11";
             //request.UseDefaultCredentials = true;
             //request.PreAuthenticate = true;
             //request.Credentials = CredentialCache.DefaultCredentials;
@@ -84,14 +84,14 @@ namespace Market.TestFixture.Web
                 Console.WriteLine(ex.Message);
             }
             YahooFinanceTransactionWebRequest webRequest = new YahooFinanceTransactionWebRequest();
-            webRequest.StockId = "AAR-UN.TO";
-            webRequest.EndDate = new DateTime(2017, 9, 7);
-            webRequest.StartDate = new DateTime(2017, 9, 5);
+            webRequest.StockId = "AAB.TO";
+            webRequest.EndDate = new DateTime(2017, 12, 15);
+            webRequest.StartDate = new DateTime(2017, 9, 14);
             var url = webRequest.GenerateTransactionDataWebRequestUrl() + "&crumb=" + crumb;
             Console.WriteLine(url);
             request = WebRequest.Create(url);
             request.Method = "GET";
-            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko";
+            ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11";
             //request.Headers.Add(HttpRequestHeader.Cookie, cookieString);
             CookieContainer cookieContainer = new CookieContainer();
             ((HttpWebRequest)request).CookieContainer = cookieContainer;
