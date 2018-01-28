@@ -8,7 +8,16 @@ namespace Market.TestFixture
     {
         public static void Main(string[] args)
         {
-            Rerun();
+            try
+            {
+                DailyRoutine();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.WriteLine(e.StackTrace);
+                Console.ReadLine();
+            }
         }
 
         private static void Rerun()
@@ -27,8 +36,8 @@ namespace Market.TestFixture
             StockTaskTestFixture stockTaskTest = new StockTaskTestFixture();
             stockTaskTest.AbleToGetAllTmxTransactionDataFromInternet();
             Console.WriteLine("Got all Transaction data from Internet");
-            stockTaskTest.AbleToGetSplitFromInternet();
-            Console.WriteLine("Got all Split from Internet");
+            //stockTaskTest.AbleToGetSplitFromInternet();
+            //Console.WriteLine("Got all Split from Internet");
             task.CalculateMovingAverageConvergenceDivergence(Properties.Settings.Default.MinStockKey,
                 Properties.Settings.Default.MaxStockKey);
             Console.WriteLine("Calculated Moving Average Convergence Devergence");

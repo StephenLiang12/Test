@@ -16,6 +16,7 @@ namespace Market.TestFixture
             Stock stock = new Stock();
             stock.Id = "TEST.TO";
             stock.Name = "Test";
+            stock.AbleToGetTransactionDataFromWeb = true;
             context.Stocks.Add(stock);
             context.SaveChanges();
             Assert.IsTrue(stock.Key > 0);

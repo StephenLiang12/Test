@@ -17,33 +17,45 @@ namespace Market.TestFixture
         [TestMethod]
         public void TestChannelReverse()
         {
-            string id = "ABX.TO";
             StockContext context = new StockContext();
-            int stockKey = context.Stocks.First(s => s.Id == id).Key;
-            IList<Channel> channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 200)
-                .OrderBy(c => c.StartDate).ToList();
-            int maxDays200;
-            int minDays200;
-            int sumOfDays200;
-            int numberOfReverse200;
-            ReviewChannels(channels, context, out maxDays200, out minDays200, out sumOfDays200, out numberOfReverse200);
-            channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 100)
-                .OrderBy(c => c.StartDate).ToList();
-            int maxDays100;
-            int minDays100;
-            int sumOfDays100;
-            int numberOfReverse100;
-            ReviewChannels(channels, context, out maxDays100, out minDays100, out sumOfDays100, out numberOfReverse100);
-            channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 50)
-                .OrderBy(c => c.StartDate).ToList();
-            int maxDays50;
-            int minDays50;
-            int sumOfDays50;
-            int numberOfReverse50;
-            ReviewChannels(channels, context, out maxDays50, out minDays50, out sumOfDays50, out numberOfReverse50);
-            Console.WriteLine("200 Channels Reverse: {0}, Max Interval: {1}, Min Interval: {2}, Average Intervals: {3}", numberOfReverse200, maxDays200, minDays200, sumOfDays200/(double)numberOfReverse200);
-            Console.WriteLine("100 Channels Reverse: {0}, Max Interval: {1}, Min Interval: {2}, Average Intervals: {3}", numberOfReverse100, maxDays100, minDays100, sumOfDays100/(double)numberOfReverse100);
-            Console.WriteLine("50 Channels Reverse: {0}, Max Interval: {1}, Min Interval: {2}, Average Intervals: {3}", numberOfReverse50, maxDays50, minDays50, sumOfDays50/(double)50);
+            foreach (var stock in context.Stocks)
+            {
+                int stockKey = stock.Key;
+                IList<Channel> channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 200)
+                    .OrderBy(c => c.StartDate).ToList();
+                int maxDays200;
+                int minDays200;
+                int sumOfDays200;
+                int numberOfReverse200;
+                ReviewChannels(channels, context, out maxDays200, out minDays200, out sumOfDays200, out numberOfReverse200);
+                channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 100)
+                    .OrderBy(c => c.StartDate).ToList();
+                int maxDays100;
+                int minDays100;
+                int sumOfDays100;
+                int numberOfReverse100;
+                ReviewChannels(channels, context, out maxDays100, out minDays100, out sumOfDays100, out numberOfReverse100);
+                channels = context.Channels.Where(c => c.StockKey == stockKey && c.Length == 50)
+                    .OrderBy(c => c.StartDate).ToList();
+                int maxDays50;
+                int minDays50;
+                int sumOfDays50;
+                int numberOfReverse50;
+                ReviewChannels(channels, context, out maxDays50, out minDays50, out sumOfDays50, out numberOfReverse50);
+                if (numberOfReverse50 > 0)
+                    stock.AvgDaysChannel50Reverse = sumOfDays50 / (double)numberOfReverse50;
+                else
+                    stock.AvgDaysChannel50Reverse = 0;
+                if (numberOfReverse100 > 0)
+                    stock.AvgDaysChannel100Reverse = sumOfDays100 / (double)numberOfReverse100;
+                else
+                    stock.AvgDaysChannel100Reverse = 0;
+                if (numberOfReverse200 > 0)
+                    stock.AvgDaysChannel200Reverse = sumOfDays200 / (double)numberOfReverse200;
+                else
+                    stock.AvgDaysChannel200Reverse = 0;
+            }
+            context.SaveChanges();
         }
 
         private static void ReviewChannels(IList<Channel> channels, StockContext context, out int maxDays, out int minDays,
@@ -90,9 +102,12 @@ namespace Market.TestFixture
         {
             StockContext context = new StockContext();
             MACDSuggestionAnalyzer analyzer = new MACDSuggestionAnalyzer();
+            StockTask stockTask = new StockTask();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            foreach (var stock in context.Stocks.Where(s => s.Key>= minStockKey && s.Key <= maxStockKey).ToList())
+            IList<int> list = new List<int>(new []{538,573,1054,917,982,1101,501,503,504,956,940,876});
+            foreach (var stock in context.Stocks.Where(s => list.Contains(s.Key) == false && s.Key > minStockKey && s.Key < maxStockKey).ToList())
             {
+                stockTask.CalculateMovingAverageConvergenceDivergence(stock.Key);
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
                 int j = 200;

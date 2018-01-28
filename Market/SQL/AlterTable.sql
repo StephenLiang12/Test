@@ -314,3 +314,27 @@ if not exists (select * from sysobjects where name = 'MovingAverageConvergenceDi
 		Feature	int
 	)
 
+--Add AvgDaysChannel50Reverse Column on Stock table
+if (not exists (select c.name from sysobjects o
+				inner join syscolumns c on o.id = c.id
+				where o.name = 'Stock'
+					and o.xtype = 'u'
+					and c.name = 'AvgDaysChannel50Reverse'))
+	alter table Stock add AvgDaysChannel50Reverse float not null default 0
+
+--Add AvgDaysChannel100Reverse Column on Stock table
+if (not exists (select c.name from sysobjects o
+				inner join syscolumns c on o.id = c.id
+				where o.name = 'Stock'
+					and o.xtype = 'u'
+					and c.name = 'AvgDaysChannel100Reverse'))
+	alter table Stock add AvgDaysChannel100Reverse float not null default 0
+
+--Add AvgDaysChannel200Reverse Column on Stock table
+if (not exists (select c.name from sysobjects o
+				inner join syscolumns c on o.id = c.id
+				where o.name = 'Stock'
+					and o.xtype = 'u'
+					and c.name = 'AvgDaysChannel200Reverse'))
+	alter table Stock add AvgDaysChannel200Reverse float not null default 0
+
