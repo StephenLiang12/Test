@@ -37,6 +37,7 @@ namespace Market.Presentation
         private double startPrice;
         private double priceIncrementPerLabel;
         private double macdIncrementPerLabel;
+        private double volumePerPixel;
 
         public MainWindow()
         {
@@ -112,6 +113,9 @@ namespace Market.Presentation
             var dateTimeLabels = AddDateTimeLabel(orderedTransactionList, dateTimeLabelIncrement);
             var maxPrice = orderedTransactionList.Max(t => t.High);
             var minPrice = orderedTransactionList.Min(t => t.Low);
+            var maxVolume = transactionsPerLine * orderedTransactionList.Max(t => t.Volume);
+            var minVolume = transactionsPerLine * orderedTransactionList.Min(t => t.Volume);
+            volumePerPixel = (maxVolume - minVolume) / 100d;
             TotalTransactionLabel.Content = count;
             LowLabel.Content = minPrice;
             HighLabel.Content = maxPrice;
@@ -156,15 +160,16 @@ namespace Market.Presentation
                 if (endIndex >= orderedTransactionList.Count)
                     endIndex = orderedTransactionList.Count - 1;
                 var close = orderedTransactionList[endIndex].Close;
-                previousMacd = AddMovingAverageConvergenceDivergence(previousMacd, orderedTransactionList[endIndex], previousX, x);
                 var high = orderedTransactionList[i].High;
                 var low = orderedTransactionList[i].Low;
+                var volume = orderedTransactionList[i].Volume;
                 for (int n = i + 1; n <= endIndex; n++)
                 {
                     if (orderedTransactionList[n].High > high)
                         high = orderedTransactionList[n].High;
                     if (orderedTransactionList[n].Low < low)
                         low = orderedTransactionList[n].Low;
+                    volume += orderedTransactionList[n].Volume;
                 }
                 Line line = new Line();
                 line.Stroke = new SolidColorBrush(Colors.Black);
@@ -190,6 +195,16 @@ namespace Market.Presentation
                 line.Y2 = GetYForPrice(close);
                 ChartCanvas.Children.Add(line);
                 chartDrawingElements.Add(line);
+                Rectangle rec = new Rectangle();
+                rec.Stroke = new SolidColorBrush(Colors.Black);
+                rec.Fill = new SolidColorBrush(Colors.LightGray);
+                rec.Width = 6;
+                rec.Height = (volume - minVolume) / volumePerPixel + 50;
+                MacdCanvas.Children.Add(rec);
+                Canvas.SetTop(rec, GetYForVolume(volume - minVolume));
+                Canvas.SetLeft(rec, x - 3);
+                macdDrawingElements.Add(rec);
+                previousMacd = AddMovingAverageConvergenceDivergence(previousMacd, orderedTransactionList[endIndex], previousX, x);
                 i += transactionsPerLine;
                 k++;
                 if (k == transactionPerDateTimeLabel)
@@ -436,6 +451,11 @@ namespace Market.Presentation
         {
             var macdIncrementPerPixel = macdIncrementPerLabel/MacdLabelPixel;
             return ZeroLine.Y1 - value/macdIncrementPerPixel;
+        }
+
+        private double GetYForVolume(double value)
+        {
+            return ZeroLine.Y1 + 110 - value/volumePerPixel;
         }
 
         private double GetXForDateTime(DateTime timeStamp)
