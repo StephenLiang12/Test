@@ -1,4 +1,5 @@
-﻿using System.Data.Entity.ModelConfiguration;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity.ModelConfiguration;
 using Market.Analyzer;
 using Market.Analyzer.MACD;
 
@@ -21,6 +22,14 @@ namespace Market.Model
             HasKey(t => t.Key);
 
             ToTable("MovingAverageConvergenceDivergenceAnalysis");
+        }
+    }
+    public class MovingAverageConvergenceDivergenceFeatureAnalysisMapping : EntityTypeConfiguration<MovingAverageConvergenceDivergenceFeatureAnalysis>
+    {
+        public MovingAverageConvergenceDivergenceFeatureAnalysisMapping()
+        {
+            HasKey(t => t.Key);
+            ToTable("MovingAverageConvergenceDivergenceFeatureAnalysis");
         }
     }
 }

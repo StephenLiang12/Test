@@ -71,6 +71,7 @@ namespace Market.Suggestions.TrendChannels
         public virtual string Name { get; private set; }
         public Term Term { get; protected set; }
         public Action Action { get; protected set; }
+        public string Pattern { get; protected set; }
         public double Price { get; protected set; }
 
         protected virtual bool ApplyBreakLogic { get { return true; } }

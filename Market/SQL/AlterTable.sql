@@ -338,3 +338,36 @@ if (not exists (select c.name from sysobjects o
 					and c.name = 'AvgDaysChannel200Reverse'))
 	alter table Stock add AvgDaysChannel200Reverse float not null default 0
 
+--Create MovingAverageConvergenceDivergenceFeatureAnalysis table
+if not exists (select * from sysobjects where name = 'MovingAverageConvergenceDivergenceFeatureAnalysis' and xtype = 'u')
+	CREATE TABLE MovingAverageConvergenceDivergenceFeatureAnalysis (
+		[Key]	bigint Primary Key Identity(1,1),
+		StockKey	int not null references Stock([Key]),
+		FeatureKey	INT NOT null,
+		FeatureName	NVARCHAR(100) NOT NULL,
+		Count int NOT NULL,
+		AverageAccuracy	FLOAT NOT NULL,
+		AverageChangePercentage FLOAT NOT NULL,
+		MaxChangePercentage	FLOAT NOT NULL
+	)
+
+--Add Pattern Name Column on Suggestion table
+if (not exists (select c.name from sysobjects o
+				inner join syscolumns c on o.id = c.id
+				where o.name = 'Suggestion'
+					and o.xtype = 'u'
+					and c.name = 'Pattern'))
+	alter table Suggestion add Pattern nvarchar(200)
+
+--Create TrendChannelBreakAnalysis table
+if not exists (select * from sysobjects where name = 'TrendChannelBreakAnalysis' and xtype = 'u')
+	CREATE TABLE TrendChannelBreakAnalysis (
+		[Key]	bigint Primary Key Identity(1,1),
+		StockKey	int not null references Stock([Key]),
+		FeatureName	NVARCHAR(100) NOT NULL,
+		Count int NOT NULL,
+		AverageAccuracy	FLOAT NOT NULL,
+		AverageChangePercentage FLOAT NOT NULL,
+		MaxChangePercentage	FLOAT NOT NULL
+	)
+

@@ -14,6 +14,7 @@ namespace Market
         public double ClosePrice { get; set; }
         public double Volume { get; set; }
         public string AnalyzerName { get; set; }
+        public string Pattern { get; set; }
         public Action SuggestedAction { get; set; }
         public Term SuggestedTerm { get; set; }
         public double? SuggestedPrice { get; set; }

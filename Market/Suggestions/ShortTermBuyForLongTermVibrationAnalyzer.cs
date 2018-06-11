@@ -9,6 +9,7 @@ namespace Market.Suggestions
         public string Name { get { return "ShortTermBuyForLongTermVibration"; } }
         public Term Term { get { return Term.Short; } }
         public Action Action { get { return Action.Buy; } }
+        public string Pattern { get; }
         public double Price { get; private set; }
 
         private readonly MovingAverageAnalyzer movingAverageAnalyzer;

@@ -58,7 +58,7 @@ namespace Market.Presentation
             var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
             foreach (var transactionData in stockContext.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
             {
-                StartDateComboBox.Items.Add(transactionData.TimeStamp);
+                StartDateComboBox.Items.Add(transactionData.TimeStamp.ToString("yyyy-MM-dd"));
             }
         }
 
@@ -76,7 +76,7 @@ namespace Market.Presentation
             foreach (var transactionData in stockContext.TransactionData.Where(t => t.StockKey == stockKey).OrderBy(t => t.TimeStamp))
             {
                 if (transactionData.TimeStamp > startDate)
-                    EndDateComboBox.Items.Add(transactionData.TimeStamp);
+                    EndDateComboBox.Items.Add(transactionData.TimeStamp.ToString("yyyy-MM-dd"));
             }
         }
 
@@ -600,32 +600,130 @@ namespace Market.Presentation
             days50DrawingElements.Clear();
         }
 
-        private void Days20TrendingCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        private void ExtendChannel_OnClick(object sender, RoutedEventArgs e)
+        {
+            RecalculateChannel();
+        }
+
+        public void RecalculateChannel()
         {
             if (StockComboBox.SelectedValue == null)
                 return;
 
             if (StartDateComboBox.SelectedValue == null)
                 return;
-            var stockKey = stockContext.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
-            var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
-            var endDate = stockContext.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
-            if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
-                endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
-            foreach (var channel in stockContext.Channels.Where(c => c.StockKey == stockKey && c.StartDate >= startDate && c.EndDate <= endDate && c.Length == 20))
+            IList<int> channelLengths = new List<int>();
+            if (Days200TrendingCheckBox.IsChecked.HasValue && Days200TrendingCheckBox.IsChecked.Value)
+                channelLengths.Add(200);
+            if (Days100TrendingCheckBox.IsChecked.HasValue && Days100TrendingCheckBox.IsChecked.Value)
+                channelLengths.Add(100);
+            if (Days50TrendingCheckBox.IsChecked.HasValue && Days50TrendingCheckBox.IsChecked.Value)
+                channelLengths.Add(50);
+            foreach (var channelLength in channelLengths)
             {
-                DrawChannelSupportLine(channel, days20DrawingElements);
-                DrawChannelResistanceLine(channel, days20DrawingElements);
+                var context = new StockContext();
+                var stockKey = context.Stocks.First(s => s.Id == StockComboBox.SelectedValue).Key;
+                var startDate = Convert.ToDateTime(StartDateComboBox.SelectedValue);
+                var endDate = context.TransactionData.Where(t => t.StockKey == stockKey).Max(t => t.TimeStamp);
+                if (string.IsNullOrEmpty(EndDateComboBox.SelectedValue.ToString()) == false)
+                    endDate = Convert.ToDateTime(EndDateComboBox.SelectedValue);
+                var channels = context.Channels.Where(t => t.StockKey == stockKey && t.StartDate >= startDate && t.EndDate <= endDate && t.Length == channelLength).OrderBy(t => t.StartDate).ToList();
+                var transactionData = context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp >= startDate && t.TimeStamp <= endDate).OrderBy(t => t.TimeStamp).ToList();
+                var previousChannel = channels[0];
+                for (int i = 1; i < channels.Count; i++)
+                {
+                    var currentChannel = channels[i];
+                    var currentTransactionData = transactionData.Where(t => t.TimeStamp >= currentChannel.StartDate && t.TimeStamp <= currentChannel.EndDate).OrderBy(t => t.TimeStamp).ToList();
+                    int breakIndex;
+                    if (previousChannel.BreakResistanceLine(currentTransactionData, out breakIndex) &&
+                        previousChannel.BreakSupportLine(currentTransactionData, out breakIndex))
+                    {
+                        previousChannel = currentChannel;
+                        continue;
+                    }
+                    var extendedChannel = ExtendPreviousChannel(previousChannel, currentChannel.StartDate, currentChannel.EndDate);
+                    if (previousChannel.BreakResistanceLine(currentTransactionData, out breakIndex))
+                    {
+                        extendedChannel.ResistanceChannelRatio = currentChannel.ResistanceChannelRatio;
+                        extendedChannel.ResistanceStartPrice = currentChannel.ResistanceStartPrice;
+                    }
+                    if (previousChannel.BreakSupportLine(currentTransactionData, out breakIndex))
+                    {
+                        extendedChannel.SupportChannelRatio = currentChannel.SupportChannelRatio;
+                        extendedChannel.SupportStartPrice = currentChannel.SupportStartPrice;
+                    }
+                    var currentSize = currentChannel.Size();
+                    var extendedSize = extendedChannel.Size();
+                    if (extendedSize < currentSize * 1.25)
+                    {
+                        currentChannel.ResistanceChannelRatio = extendedChannel.ResistanceChannelRatio;
+                        currentChannel.ResistanceStartPrice = extendedChannel.ResistanceStartPrice;
+                        currentChannel.SupportChannelRatio = extendedChannel.SupportChannelRatio;
+                        currentChannel.SupportStartPrice = extendedChannel.SupportStartPrice;
+                    }
+                    previousChannel = currentChannel;
+                }
+
+
+                if (channelLength == 200)
+                {
+                    foreach (var drawingElement in days200DrawingElements)
+                        ChartCanvas.Children.Remove(drawingElement);
+                    days200DrawingElements.Clear();
+                }
+
+                if (channelLength == 100)
+                {
+                    foreach (var drawingElement in days100DrawingElements)
+                        ChartCanvas.Children.Remove(drawingElement);
+                    days100DrawingElements.Clear();
+                }
+
+                if (channelLength == 50)
+                {
+                    foreach (var drawingElement in days50DrawingElements)
+                        ChartCanvas.Children.Remove(drawingElement);
+                    days50DrawingElements.Clear();
+                }
+
+                foreach (var channel in channels)
+                {
+                    if (channelLength == 200)
+                    {
+                        DrawChannelSupportLine(channel, days200DrawingElements);
+                        DrawChannelResistanceLine(channel, days200DrawingElements);
+                    }
+                    if (channelLength == 100)
+                    {
+                        DrawChannelSupportLine(channel, days100DrawingElements);
+                        DrawChannelResistanceLine(channel, days100DrawingElements);
+                    }
+                    if (channelLength == 50)
+                    {
+                        DrawChannelSupportLine(channel, days50DrawingElements);
+                        DrawChannelResistanceLine(channel, days50DrawingElements);
+                    }
+                }
             }
         }
 
-        private void Days20TrendingCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        private Channel ExtendPreviousChannel(Channel previousChannel, DateTime startDate, DateTime endDate)
         {
-            foreach (var drawingElement in days20DrawingElements)
-            {
-                ChartCanvas.Children.Remove(drawingElement);
-            }
-            days20DrawingElements.Clear();
+            StockContext context = new StockContext();
+            var transactionData = context.TransactionData
+                .Where(t => t.StockKey == previousChannel.StockKey && t.TimeStamp >= previousChannel.StartDate &&
+                            t.TimeStamp <= endDate).OrderBy(t => t.TimeStamp).ToList();
+            int index = transactionData.FindIndex(t => t.TimeStamp == startDate);
+            TrendChannelAnalyzer analyzer = new TrendChannelAnalyzer();
+            var channel = new Channel();
+            channel.StartDate = startDate;
+            channel.EndDate = endDate;
+            channel.Length = previousChannel.Length;
+            channel.ResistanceChannelRatio = previousChannel.ResistanceChannelRatio;
+            channel.ResistanceStartPrice = analyzer.CalculatePriceAt(index, channel.ResistanceChannelRatio, previousChannel.ResistanceStartPrice, 0);
+            channel.SupportChannelRatio = previousChannel.SupportChannelRatio;
+            channel.SupportStartPrice = analyzer.CalculatePriceAt(index, channel.SupportChannelRatio, previousChannel.SupportStartPrice, 0);
+            return channel;
         }
     }
 }

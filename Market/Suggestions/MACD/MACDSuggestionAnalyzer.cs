@@ -13,6 +13,7 @@ namespace Market.Suggestions.MACD
         public string Name { get { return "MovingAverageConvergenceDivergence"; } }
         public Term Term { get; private set; }
         public Action Action { get; private set; }
+        public string Pattern { get; private set; }
         public double Price { get; private set; }
 
         private readonly int shortTerm;
@@ -47,6 +48,7 @@ namespace Market.Suggestions.MACD
             DateTime endTime = orderedTransactions[count - 1].TimeStamp;
             var list = stockContext.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= startTime && m.TimeStamp <= endTime).OrderBy(m => m.TimeStamp).ToList();
             var pattern = movingAverageConvergenceDivergencePatternAnalyzer.Analyze(list);
+            Pattern = pattern.ToString();
             if (pattern != MovingAverageConvergenceDivergenceFeature.Unkown)
             {
                 var analysis = list[list.Count - 1].CopyToAnalysis();

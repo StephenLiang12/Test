@@ -18,8 +18,10 @@ namespace Market
         public DbSet<Suggestion> Suggestions { get; set; }
         public DbSet<TransactionSimulator> TransactionSimulators { get; set; }
         public DbSet<Channel> Channels { get; set; }
+        public DbSet<TrendChannelBreakAnalysis> TrendChannelBreakAnalyses { get; set; }
         public DbSet<MovingAverageConvergenceDivergence> MovingAverageConvergenceDivergences { get; set; }
         public DbSet<MovingAverageConvergenceDivergenceAnalysis> MovingAverageConvergenceDivergenceAnalyses { get; set; }
+        public DbSet<MovingAverageConvergenceDivergenceFeatureAnalysis> MovingAverageConvergenceDivergenceFeatureAnalyses { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -30,8 +32,10 @@ namespace Market
             modelBuilder.Configurations.Add(new SuggestionMapping());
             modelBuilder.Configurations.Add(new TransactionSimulatorMapping());
             modelBuilder.Configurations.Add(new ChannelMapping());
+            modelBuilder.Configurations.Add(new TrendChannelBreakAnalysisMapping());
             modelBuilder.Configurations.Add(new MovingAverageConvergenceDivergenceMapping());
             modelBuilder.Configurations.Add(new MovingAverageConvergenceDivergenceAnalysisMapping());
+            modelBuilder.Configurations.Add(new MovingAverageConvergenceDivergenceFeatureAnalysisMapping());
         }
     }
 }

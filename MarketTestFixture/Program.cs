@@ -11,6 +11,7 @@ namespace Market.TestFixture
             try
             {
                 DailyRoutine();
+                //Rerun();
             }
             catch (Exception e)
             {
@@ -23,10 +24,10 @@ namespace Market.TestFixture
         private static void Rerun()
         {
             IntegrationTest test = new IntegrationTest();
-            Console.WriteLine("Rerun Analyzer from {0} to {1}", Properties.Settings.Default.MinStockKey,
-                Properties.Settings.Default.MaxStockKey);
-            test.RerunFromBeginning(Properties.Settings.Default.MinStockKey, Properties.Settings.Default.MaxStockKey);
-            Console.WriteLine("Rerun complete");
+            //Console.WriteLine("Rerun Analyzer from {0} to {1}", Properties.Settings.Default.MinStockKey,
+            //    Properties.Settings.Default.MaxStockKey);
+            test.RunMovingAverageConvergenceDivergenceFeatureAnalysis();
+            Console.WriteLine("Completed");
             Console.ReadLine();
         }
 

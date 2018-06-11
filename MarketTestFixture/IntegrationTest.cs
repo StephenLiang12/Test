@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Market.Analyzer;
 using Market.Analyzer.Channels;
+using Market.Analyzer.MACD;
 using Market.Suggestions;
 using Market.Suggestions.MACD;
 using Market.Suggestions.TrendChannels;
@@ -98,14 +99,14 @@ namespace Market.TestFixture
         }
 
         [TestMethod]
-        public void RerunFromBeginning(int minStockKey, int maxStockKey)
+        public void RerunFromBeginning()
         {
             StockContext context = new StockContext();
             MACDSuggestionAnalyzer analyzer = new MACDSuggestionAnalyzer();
             StockTask stockTask = new StockTask();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            IList<int> list = new List<int>(new []{538,573,1054,917,982,1101,501,503,504,956,940,876});
-            foreach (var stock in context.Stocks.Where(s => list.Contains(s.Key) == false && s.Key > minStockKey && s.Key < maxStockKey).ToList())
+            IList<int> list = new List<int>(new []{96});
+            foreach (var stock in context.Stocks.Where(s => list.Contains(s.Key)))
             {
                 stockTask.CalculateMovingAverageConvergenceDivergence(stock.Key);
                 IList<TransactionData> orderedList =
@@ -145,13 +146,16 @@ namespace Market.TestFixture
                                         s.SuggestedAction == suggestion.SuggestedAction &&
                                         s.SuggestedTerm == suggestion.SuggestedTerm) == false)
                             {
-                                context.Suggestions.Add(suggestion);
-                                context.SaveChanges();
+                                StockContext saveContext = new StockContext();
+                                saveContext.Suggestions.Add(suggestion);
+                                saveContext.SaveChanges();
                             }
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Console.WriteLine(ex.StackTrace);
+                        throw;
                     }
                     j++;
                 }
@@ -255,6 +259,278 @@ namespace Market.TestFixture
             }
         }
 
+
+        [TestMethod]
+        public void RunMovingAverageConvergenceDivergenceFeatureAnalysis()
+        {
+            MACDSuggestionAnalyzer analyzer = new MACDSuggestionAnalyzer();
+            StockContext context = new StockContext();
+            //foreach (var stock in context.Stocks)
+            {
+                var stock = context.Stocks.First(s => s.Key == 96);
+                //if (stock.AvgVolume < 100000)
+                //    continue;
+                if (context.Suggestions.Any(s => s.StockKey == stock.Key))
+                {
+                    Dictionary<MovingAverageConvergenceDivergenceFeature, MovingAverageConvergenceDivergenceFeatureAnalysis> analysesDic = new Dictionary<MovingAverageConvergenceDivergenceFeature, MovingAverageConvergenceDivergenceFeatureAnalysis>();
+                    Dictionary<MovingAverageConvergenceDivergenceFeature, double> accuracySumDic = new Dictionary<MovingAverageConvergenceDivergenceFeature, double>();
+                    Dictionary<MovingAverageConvergenceDivergenceFeature, double> accuracyWeightedSumDic = new Dictionary<MovingAverageConvergenceDivergenceFeature, double>();
+                    Dictionary<MovingAverageConvergenceDivergenceFeature, double> changePercentageSumDic = new Dictionary<MovingAverageConvergenceDivergenceFeature, double>();
+                    SortedList<DateTime, TransactionData> trasactionSortedList = new SortedList<DateTime, TransactionData>();
+                    foreach (var transaction in context.TransactionData.Where(t => t.StockKey == stock.Key))
+                    {
+                        trasactionSortedList.Add(transaction.TimeStamp, transaction);
+                    }
+
+                    foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stock.Key))
+                    {
+                        if (suggestion.AnalyzerName != analyzer.Name)
+                            continue;
+                        try
+                        {
+                            if (context.MovingAverageConvergenceDivergenceAnalyses.Any(a => a.StockKey == suggestion.StockKey && a.TimeStamp == suggestion.TimeStamp) == false)
+                                continue;
+                            var macdAnalysis = context.MovingAverageConvergenceDivergenceAnalyses.First(a =>
+                                a.StockKey == suggestion.StockKey && a.TimeStamp == suggestion.TimeStamp);
+                            if (macdAnalysis == null)
+                                return;
+                            if (analysesDic.ContainsKey(macdAnalysis.Feature) == false)
+                            {
+                                var featureAnalysis = new MovingAverageConvergenceDivergenceFeatureAnalysis();
+                                featureAnalysis.StockKey = stock.Key;
+                                featureAnalysis.FeatureKey = (int) macdAnalysis.Feature;
+                                featureAnalysis.FeatureName = macdAnalysis.Feature.ToString();
+                                featureAnalysis.AverageAccuracy = 0;
+                                featureAnalysis.AverageChangePercentage = 0;
+                                featureAnalysis.MaxChangePercentage = 0;
+                                analysesDic.Add(macdAnalysis.Feature, featureAnalysis);
+                                accuracySumDic.Add(macdAnalysis.Feature, 0);
+                                accuracyWeightedSumDic.Add(macdAnalysis.Feature, 0);
+                                changePercentageSumDic.Add(macdAnalysis.Feature, 0);
+                            }
+
+                            int start = trasactionSortedList.IndexOfKey(suggestion.TimeStamp);
+                            int end = 0;
+                            double priceChange = 0;
+                            double expectingPercentage = 0;
+                            double minimumPercentage = 0;
+                            if (suggestion.SuggestedTerm == Term.Short)
+                            {
+                                end = start + 10;
+                                expectingPercentage = 0.05;
+                            }
+
+                            if (suggestion.SuggestedTerm == Term.Intermediate)
+                            {
+                                end = start + 20;
+                                expectingPercentage = 0.1;
+                                minimumPercentage = 0.02;
+                            }
+
+                            if (suggestion.SuggestedTerm == Term.Long)
+                            {
+                                end = start + 50;
+                                expectingPercentage = 0.2;
+                                minimumPercentage = 0.005;
+                            }
+
+                            priceChange = CalculatePriceChange(trasactionSortedList, suggestion.SuggestedAction, start,
+                                end, suggestion.ClosePrice);
+                            analysesDic[macdAnalysis.Feature].Count++;
+                            double changePercentage = 0;
+                            if (suggestion.ClosePrice > 0)
+                                changePercentage = priceChange / suggestion.ClosePrice;
+                            int sign = 1;
+                            if (suggestion.SuggestedAction == Action.Sell)
+                                sign = -1;
+                            if (analysesDic[macdAnalysis.Feature].MaxChangePercentage * sign < changePercentage * sign)
+                                analysesDic[macdAnalysis.Feature].MaxChangePercentage = changePercentage;
+                            double accurate = 0;
+                            if (Math.Sign(priceChange) == sign)
+                            {
+                                double percertage = sign * changePercentage;
+                                if (percertage < minimumPercentage)
+                                    accurate = 0;
+                                accurate = percertage / expectingPercentage;
+                                if (accurate > 1)
+                                    accurate = 1;
+                            }
+
+                            accuracySumDic[macdAnalysis.Feature] += accurate;
+                            changePercentageSumDic[macdAnalysis.Feature] += changePercentage;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Suggestion {0} starts at {1} with term {2} throw exception: {3}",
+                                suggestion.StockId, suggestion.TimeStamp, suggestion.SuggestedTerm, e.Message);
+                        }
+                    }
+
+                    foreach (var pair in analysesDic)
+                    {
+                        if (pair.Value.Count > 0)
+                        {
+                            pair.Value.AverageAccuracy = accuracySumDic[pair.Key] / pair.Value.Count;
+                            pair.Value.AverageChangePercentage = changePercentageSumDic[pair.Key] / pair.Value.Count;
+                        }
+                    }
+                    StockContext updateContext = new StockContext();
+                    foreach (var pair in analysesDic)
+                    {
+                        if (updateContext.MovingAverageConvergenceDivergenceFeatureAnalyses.Any(a =>
+                            a.FeatureKey == (int)pair.Key && a.StockKey == stock.Key))
+                        {
+                            var analysis =
+                                updateContext.MovingAverageConvergenceDivergenceFeatureAnalyses.First(a =>
+                                    a.FeatureKey == (int)pair.Key && a.StockKey == stock.Key);
+                            analysis.Count = pair.Value.Count;
+                            analysis.AverageAccuracy = pair.Value.AverageAccuracy;
+                            analysis.AverageChangePercentage = pair.Value.AverageChangePercentage;
+                            analysis.MaxChangePercentage = pair.Value.MaxChangePercentage;
+                        }
+                        else
+                            updateContext.MovingAverageConvergenceDivergenceFeatureAnalyses.Add(pair.Value);
+                    }
+
+                    updateContext.SaveChanges();
+                }
+
+            }
+
+        }
+
+        [TestMethod]
+        public void RunTrendChannelBreakAnalysis()
+        {
+            TrendChannelBreakSuggestionAnalyzer analyzer = new TrendChannelBreakSuggestionAnalyzer();
+            StockContext context = new StockContext();
+            //foreach (var stock in context.Stocks)
+            {
+                var stock = context.Stocks.First(s => s.Key == 96);
+                //if (stock.AvgVolume < 100000)
+                //    continue;
+                if (context.Suggestions.Any(s => s.StockKey == stock.Key))
+                {
+                    Dictionary<string, TrendChannelBreakAnalysis> analysesDic = new Dictionary<string, TrendChannelBreakAnalysis>();
+                    Dictionary<string, double> accuracySumDic = new Dictionary<string, double>();
+                    Dictionary<string, double> accuracyWeightedSumDic = new Dictionary<string, double>();
+                    Dictionary<string, double> changePercentageSumDic = new Dictionary<string, double>();
+                    SortedList<DateTime, TransactionData> trasactionSortedList = new SortedList<DateTime, TransactionData>();
+                    foreach (var transaction in context.TransactionData.Where(t => t.StockKey == stock.Key))
+                    {
+                        trasactionSortedList.Add(transaction.TimeStamp, transaction);
+                    }
+
+                    foreach (var suggestion in context.Suggestions.Where(s => s.StockKey == stock.Key))
+                    {
+                        if (suggestion.AnalyzerName != analyzer.Name)
+                            continue;
+                        try
+                        {
+                            if (analysesDic.ContainsKey(suggestion.Pattern) == false)
+                            {
+                                var analysis = new TrendChannelBreakAnalysis();
+                                analysis.StockKey = stock.Key;
+                                analysis.FeatureName = suggestion.Pattern;
+                                analysis.AverageAccuracy = 0;
+                                analysis.AverageChangePercentage = 0;
+                                analysis.MaxChangePercentage = 0;
+                                analysesDic.Add(suggestion.Pattern, analysis);
+                                accuracySumDic.Add(suggestion.Pattern, 0);
+                                accuracyWeightedSumDic.Add(suggestion.Pattern, 0);
+                                changePercentageSumDic.Add(suggestion.Pattern, 0);
+                            }
+
+                            int start = trasactionSortedList.IndexOfKey(suggestion.TimeStamp);
+                            int end = 0;
+                            double priceChange = 0;
+                            double expectingPercentage = 0;
+                            double minimumPercentage = 0;
+                            if (suggestion.SuggestedTerm == Term.Short)
+                            {
+                                end = start + 10;
+                                expectingPercentage = 0.05;
+                            }
+
+                            if (suggestion.SuggestedTerm == Term.Intermediate)
+                            {
+                                end = start + 20;
+                                expectingPercentage = 0.1;
+                                minimumPercentage = 0.02;
+                            }
+
+                            if (suggestion.SuggestedTerm == Term.Long)
+                            {
+                                end = start + 50;
+                                expectingPercentage = 0.2;
+                                minimumPercentage = 0.005;
+                            }
+
+                            priceChange = CalculatePriceChange(trasactionSortedList, suggestion.SuggestedAction, start,
+                                end, suggestion.ClosePrice);
+                            analysesDic[suggestion.Pattern].Count++;
+                            double changePercentage = 0;
+                            if (suggestion.ClosePrice > 0)
+                                changePercentage = priceChange / suggestion.ClosePrice;
+                            int sign = 1;
+                            if (suggestion.SuggestedAction == Action.Sell)
+                                sign = -1;
+                            if (analysesDic[suggestion.Pattern].MaxChangePercentage * sign < changePercentage * sign)
+                                analysesDic[suggestion.Pattern].MaxChangePercentage = changePercentage;
+                            double accurate = 0;
+                            if (Math.Sign(priceChange) == sign)
+                            {
+                                double percertage = sign * changePercentage;
+                                if (percertage < minimumPercentage)
+                                    accurate = 0;
+                                accurate = percertage / expectingPercentage;
+                                if (accurate > 1)
+                                    accurate = 1;
+                            }
+
+                            accuracySumDic[suggestion.Pattern] += accurate;
+                            changePercentageSumDic[suggestion.Pattern] += changePercentage;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Suggestion {0} starts at {1} with term {2} throw exception: {3}",
+                                suggestion.StockId, suggestion.TimeStamp, suggestion.SuggestedTerm, e.Message);
+                        }
+                    }
+
+                    foreach (var pair in analysesDic)
+                    {
+                        if (pair.Value.Count > 0)
+                        {
+                            pair.Value.AverageAccuracy = accuracySumDic[pair.Key] / pair.Value.Count;
+                            pair.Value.AverageChangePercentage = changePercentageSumDic[pair.Key] / pair.Value.Count;
+                        }
+                    }
+                    StockContext updateContext = new StockContext();
+                    foreach (var pair in analysesDic)
+                    {
+                        if (updateContext.TrendChannelBreakAnalyses.Any(a =>
+                            a.FeatureName == pair.Key && a.StockKey == stock.Key))
+                        {
+                            var analysis =
+                                updateContext.TrendChannelBreakAnalyses.First(a =>
+                                    a.FeatureName == pair.Key && a.StockKey == stock.Key);
+                            analysis.Count = pair.Value.Count;
+                            analysis.AverageAccuracy = pair.Value.AverageAccuracy;
+                            analysis.AverageChangePercentage = pair.Value.AverageChangePercentage;
+                            analysis.MaxChangePercentage = pair.Value.MaxChangePercentage;
+                        }
+                        else
+                            updateContext.TrendChannelBreakAnalyses.Add(pair.Value);
+                    }
+
+                    updateContext.SaveChanges();
+                }
+
+            }
+
+        }
+
         [TestMethod]
         public void TestValuation()
         {
@@ -321,7 +597,6 @@ namespace Market.TestFixture
                     }
                 }
             }
-            context.SaveChanges();
         }
 
         private static double CalculateAccuracy(SortedList<DateTime, TransactionData> trasactionSortedList, Action action,
@@ -359,6 +634,32 @@ namespace Market.TestFixture
                     accurate = 1;
             }
             return accurate;
+        }
+
+        private static double CalculatePriceChange(SortedList<DateTime, TransactionData> trasactionSortedList, Action action,
+            int start, int end, double closePrice)
+        {
+            double startPrice = trasactionSortedList.Values[start].Close;
+            double realPrice = startPrice;
+            int sign = 1;
+            if (action == Action.Sell)
+                sign = -1;
+            for (int i = start + 1; i <= end; i++)
+            {
+                if (i > trasactionSortedList.Count - 1)
+                    break;
+                if (action == Action.Buy)
+                {
+                    if (realPrice < trasactionSortedList.Values[i].Close)
+                        realPrice = trasactionSortedList.Values[i].Close;
+                }
+                else
+                {
+                    if (realPrice > trasactionSortedList.Values[i].Close)
+                        realPrice = trasactionSortedList.Values[i].Close;
+                }
+            }
+            return realPrice - startPrice;
         }
 
         //[TestMethod]
@@ -455,11 +756,13 @@ namespace Market.TestFixture
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
+            TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             IList<ISuggestionAnalyzer> analyzers = new List<ISuggestionAnalyzer>();
             //analyzers.Add(new ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer());
             //analyzers.Add(new LongTermBuyAfterLongTermPrepareSuggestionAnalyzer());
             analyzers.Add(macdSuggestionAnalyzer);
+            analyzers.Add(trendChannelBreakSuggestionAnalyzer);
 
             foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
@@ -534,6 +837,7 @@ namespace Market.TestFixture
                             suggestion.AnalyzerName = suggestionAnalyzer.Name;
                             suggestion.SuggestedTerm = suggestionAnalyzer.Term;
                             suggestion.SuggestedAction = suggestionAnalyzer.Action;
+                            suggestion.Pattern = suggestionAnalyzer.Pattern;
                             if (context.Suggestions.Any(
                                     s =>
                                         s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
@@ -880,9 +1184,9 @@ namespace Market.TestFixture
         public void RerunAnalyzer()
         {
             StockContext context = new StockContext();
-            var suggestionAnalyzer = new MACDSuggestionAnalyzer();
+            var suggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
             var transactionData =
-                context.TransactionData.Where(t => t.StockKey == 477 && t.TimeStamp <= new DateTime(2016, 1, 6) && t.TimeStamp >= new DateTime(2015, 1, 6))
+                context.TransactionData.Where(t => t.StockKey == 96 && t.TimeStamp <= new DateTime(2018, 4, 13) && t.TimeStamp >= new DateTime(2017, 4, 6))
                     .OrderBy(t => t.TimeStamp)
                     .ToList();
             var result = suggestionAnalyzer.CalculateForecaseCertainty(transactionData);
@@ -895,14 +1199,14 @@ namespace Market.TestFixture
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             IList<ISuggestionAnalyzer> suggestionAnalyzers = new List<ISuggestionAnalyzer>();
-            MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
+            //MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
             TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
-            suggestionAnalyzers.Add(macdSuggestionAnalyzer);
+            suggestionAnalyzers.Add(trendChannelBreakSuggestionAnalyzer);
             //suggestionAnalyzers.Add(trendChannelBreakSuggestionAnalyzer);
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 479)
+                if (stock.Key != 96)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
@@ -977,10 +1281,11 @@ namespace Market.TestFixture
                             var forecaseCertainty = suggestionAnalyzer.CalculateForecaseCertainty(partialList);
                             if (forecaseCertainty > 0)
                             {
-                                suggestion.AnalyzerName = macdSuggestionAnalyzer.Name;
-                                suggestion.SuggestedAction = macdSuggestionAnalyzer.Action;
-                                suggestion.SuggestedTerm = macdSuggestionAnalyzer.Term;
-                                suggestion.SuggestedPrice = macdSuggestionAnalyzer.Price;
+                                suggestion.AnalyzerName = suggestionAnalyzer.Name;
+                                suggestion.Pattern = suggestionAnalyzer.Pattern;
+                                suggestion.SuggestedAction = suggestionAnalyzer.Action;
+                                suggestion.SuggestedTerm = suggestionAnalyzer.Term;
+                                suggestion.SuggestedPrice = suggestionAnalyzer.Price;
                                 context.Suggestions.Add(suggestion);
                                 context.SaveChanges();
                                 break;
@@ -997,5 +1302,54 @@ namespace Market.TestFixture
             }
         }
 
+        [TestMethod]
+        public void RecalculateChannel()
+        {
+            StockContext context = new StockContext();
+            int stockKey = 66;
+            DateTime startDate = new DateTime(2011, 1, 1);
+            DateTime endDate = new DateTime(2011, 12, 1);
+            int length = 200;
+            var channels = context.Channels.Where(t => t.StockKey == stockKey && t.StartDate >= startDate && t.EndDate <= endDate && t.Length == length).OrderBy(t => t.StartDate).ToList();
+            var transactionData = context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp >= startDate && t.TimeStamp <= endDate).OrderBy(t => t.TimeStamp).ToList();
+            var previousChannel = channels[0];
+            for (int i = 1; i < channels.Count; i++)
+            {
+                var currentChannel = channels[i];
+                var currentTransactionData = transactionData.Where(t => t.TimeStamp >= currentChannel.StartDate && t.TimeStamp <= currentChannel.EndDate).OrderBy(t => t.TimeStamp).ToList();
+                int breakIndex;
+                if (previousChannel.BreakResistanceLine(currentTransactionData, out breakIndex) || previousChannel.BreakSupportLine(currentTransactionData, out breakIndex))
+                    continue;
+                var extendedChannel = ExtendPreviousChannel(previousChannel, currentChannel.StartDate, currentChannel.EndDate);
+                var currentSize = currentChannel.Size();
+                var extendedSize = extendedChannel.Size();
+                if (extendedSize < currentSize * 1.1)
+                {
+                    currentChannel.ResistanceChannelRatio = extendedChannel.ResistanceChannelRatio;
+                    currentChannel.ResistanceStartPrice = extendedChannel.ResistanceStartPrice;
+                    currentChannel.SupportChannelRatio = extendedChannel.SupportChannelRatio;
+                    currentChannel.SupportStartPrice = extendedChannel.SupportStartPrice;
+                }
+            }
+        }
+
+        private Channel ExtendPreviousChannel(Channel previousChannel, DateTime startDate, DateTime endDate)
+        {
+            StockContext context = new StockContext();
+            var transactionData = context.TransactionData
+                .Where(t => t.StockKey == previousChannel.StockKey && t.TimeStamp >= previousChannel.StartDate &&
+                            t.TimeStamp <= endDate).OrderBy(t => t.TimeStamp).ToList();
+            int index = transactionData.FindIndex(t => t.TimeStamp == startDate);
+            TrendChannelAnalyzer analyzer = new TrendChannelAnalyzer();
+            var channel = new Channel();
+            channel.StartDate = startDate;
+            channel.EndDate = endDate;
+            channel.Length = previousChannel.Length;
+            channel.ResistanceChannelRatio = previousChannel.ResistanceChannelRatio;
+            channel.ResistanceStartPrice = analyzer.CalculatePriceAt(index, channel.ResistanceChannelRatio, previousChannel.ResistanceStartPrice, 0);
+            channel.SupportChannelRatio = previousChannel.SupportChannelRatio;
+            channel.SupportStartPrice = analyzer.CalculatePriceAt(index, channel.SupportChannelRatio, previousChannel.SupportStartPrice, 0);
+            return channel;
+        }
     }
 }

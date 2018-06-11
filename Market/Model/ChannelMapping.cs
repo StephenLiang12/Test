@@ -12,4 +12,13 @@ namespace Market.Model
             ToTable("Channel");
         }
     }
+    public class TrendChannelBreakAnalysisMapping : EntityTypeConfiguration<TrendChannelBreakAnalysis>
+    {
+        public TrendChannelBreakAnalysisMapping()
+        {
+            HasKey(t => t.Key);
+
+            ToTable("TrendChannelBreakAnalysis");
+        }
+    }
 }

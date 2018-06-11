@@ -189,5 +189,50 @@ namespace Market.TestFixture
             context.SaveChanges();
             Assert.IsTrue(analysis.Key > 0);
         }
+
+        [TestMethod]
+        public void AbleToAddMovingAverageConvergenceDivergenceFeatureAnalysis()
+        {
+            StockContext context = new StockContext();
+            Stock stock = new Stock();
+            stock.Id = "TEST.TO";
+            stock.Name = "Test";
+            context.Stocks.Add(stock);
+            context.SaveChanges();
+            MovingAverageConvergenceDivergenceFeatureAnalysis analysis = new MovingAverageConvergenceDivergenceFeatureAnalysis();
+            analysis.StockKey = stock.Key;
+            analysis.FeatureKey = (int)MovingAverageConvergenceDivergenceFeature.AllAboveZero;
+            analysis.FeatureName = MovingAverageConvergenceDivergenceFeature.AllAboveZero.ToString();
+            analysis.Count = 10;
+            analysis.AverageAccuracy = 1;
+            analysis.AverageChangePercentage = 3;
+            analysis.MaxChangePercentage = 4;
+            context.MovingAverageConvergenceDivergenceFeatureAnalyses.Add(analysis);
+            context.SaveChanges();
+            Assert.IsTrue(analysis.Key > 0);
+            Assert.AreEqual((int)MovingAverageConvergenceDivergenceFeature.AllAboveZero, analysis.FeatureKey);
+        }
+
+        [TestMethod]
+        public void AbleToAddTrendChannelBreakAnalysis()
+        {
+            StockContext context = new StockContext();
+            Stock stock = new Stock();
+            stock.Id = "TEST.TO";
+            stock.Name = "Test";
+            context.Stocks.Add(stock);
+            context.SaveChanges();
+            TrendChannelBreakAnalysis analysis = new TrendChannelBreakAnalysis();
+            analysis.StockKey = stock.Key;
+            analysis.FeatureName = "Test";
+            analysis.Count = 10;
+            analysis.AverageAccuracy = 1;
+            analysis.AverageChangePercentage = 3;
+            analysis.MaxChangePercentage = 4;
+            context.TrendChannelBreakAnalyses.Add(analysis);
+            context.SaveChanges();
+            Assert.IsTrue(analysis.Key > 0);
+            Assert.AreEqual("Test", analysis.FeatureName);
+        }
     }
 }

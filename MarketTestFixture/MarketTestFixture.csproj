@@ -67,6 +67,7 @@
     <Compile Include="Analyzer\CandleStickPatterns\HammerTestFixture.cs" />
     <Compile Include="Analyzer\CandleStickPatterns\HangingManTestFixture.cs" />
     <Compile Include="Analyzer\CandleStickPatterns\MarubozuTestFixture.cs" />
+    <Compile Include="Analyzer\Channels\ChannelExtensionTestFixture.cs" />
     <Compile Include="Analyzer\Channels\TrendChannelAnalyzerTestFixture.cs" />
     <Compile Include="Analyzer\EnumerableExtensionTestFixture.cs" />
     <Compile Include="Analyzer\ExponentMovingAverageCalculatorTestFixture.cs" />

@@ -48,7 +48,7 @@
             <CheckBox Name="Days200TrendingCheckBox" Content="200 Days" Grid.Row="8" Grid.Column="1" Margin="0,5" Checked="Days200TrendingCheckBox_OnChecked" Unchecked="Days200TrendingCheckBox_OnUnchecked"></CheckBox>
             <CheckBox Name="Days100TrendingCheckBox" Content="100 Days" Grid.Row="9" Grid.Column="1" Margin="0,5" Checked="Days100TrendingCheckBox_OnChecked" Unchecked="Days100TrendingCheckBox_OnUnchecked"></CheckBox>
             <CheckBox Name="Days50TrendingCheckBox" Content="50 Days" Grid.Row="10" Grid.Column="1" Margin="0,5" Checked="Days50TrendingCheckBox_OnChecked" Unchecked="Days50TrendingCheckBox_OnUnchecked"></CheckBox>
-            <CheckBox Name="Days20TrendingCheckBox" Content="20 Days" Grid.Row="11" Grid.Column="1" Margin="0,5" Checked="Days20TrendingCheckBox_OnChecked" Unchecked="Days20TrendingCheckBox_OnUnchecked"></CheckBox>
+            <Button Name="ExtendChannel" Content="Extend Channel" Grid.Row="11" Grid.ColumnSpan="2" Margin="20,5" Click="ExtendChannel_OnClick"></Button>
         </Grid>
         <Canvas Name="ChartCanvas" Grid.Row="0" Grid.Column="1" Margin="3">
             <Line Name="DateLine" X1="20" X2="1560" Y1="530" Y2="530" StrokeThickness="1" Stroke="Black"></Line>

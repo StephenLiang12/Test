@@ -83,7 +83,8 @@ namespace Market.Analyzer.Channels
                 var gap = resistancePrice - supportPrice;
                 if (gap < 0.005)
                     return true;
-                var closeEnough = (orderedTransactions[orderedTransactions.Count - i - 1].Low - supportPrice) / gap <= 0.1;
+                var percentageFromSupport = (orderedTransactions[orderedTransactions.Count - i - 1].Low - supportPrice) / gap;
+                var closeEnough = percentageFromSupport <= 0.15;
                 if (closeEnough)
                     return true;
             }
