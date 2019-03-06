@@ -128,6 +128,7 @@
     <Compile Include="Suggestions\ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\TrendChannelBreakSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\TrendChannelSuggestionAnalyzer.cs" />
+    <Compile Include="Suggestions\TrendChannels\TrendChannelTriangleBreakSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\UpDownEvenTrendChannelSuggestionAnalyzer.cs" />
     <Compile Include="Suggestions\TrendChannels\UpEvenEvenTrendChannelSuggestionAnalyzer .cs" />
     <Compile Include="Suggestions\TrendChannels\UpEvenDownTrendChannelSuggestionAnalyzer.cs" />

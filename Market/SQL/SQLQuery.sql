@@ -39,3 +39,21 @@ where SellDate is not null
   and s.SuggestedTerm = 3
 group by TS.stockKey
 order by 2
+
+select StockKey, TimeStamp, StockId, StockName, Volume, ClosePrice, SuggestedAction, SuggestedTerm, AnalyzerName, Pattern from Suggestion
+where TimeStamp = '2019-01-02'
+  and volume > 100000
+  and SuggestedAction = 1
+order by StockId
+
+select StockKey, TimeStamp, StockId, StockName, Volume, ClosePrice, SuggestedAction, SuggestedTerm, AnalyzerName, Pattern from Suggestion
+where StockId LIKE 'HOD%'
+order by TimeStamp desc
+
+select * from MovingAverageConvergenceDivergence
+where StockKey = 11
+order by TimeStamp desc
+
+select * from TransactionData
+where StockKey = 477
+order by TimeStamp desc

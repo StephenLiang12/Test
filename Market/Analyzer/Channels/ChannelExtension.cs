@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Market.Analyzer.Channels
 {
     public static class ChannelExtension
     {
+        private const double LongTermPercentageThreshold = 0.05;
+        private const double IntermediateTermPercentageThreshold = 0.02;
+        private const double ShortTermPercentageThreshold = 0.01;
+
         public static double Size(this Channel channel)
         {
             double upperLimitEndPrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio*(channel.Length - 1);
@@ -36,10 +41,21 @@ namespace Market.Analyzer.Channels
             return (count - outOfCoverage)/count;
         }
 
+        public static double GetPercentageThreshold(this Channel channel)
+        {
+            if (channel.Length == 200)
+                return LongTermPercentageThreshold;
+            if (channel.Length == 100)
+                return IntermediateTermPercentageThreshold;
+            if (channel.Length == 50)
+                return ShortTermPercentageThreshold;
+            return 0;
+        }
+
         public static int GetSupportSign(this Channel channel)
         {
-            double abs = Math.Abs(channel.SupportChannelRatio/channel.SupportStartPrice*200);
-            if (abs > 0.1)
+            double abs = Math.Abs(channel.SupportChannelRatio/channel.SupportStartPrice*channel.Length);
+            if (abs > channel.GetPercentageThreshold())
             {
                 if (channel.SupportChannelRatio > 0)
                     return 1;
@@ -50,8 +66,8 @@ namespace Market.Analyzer.Channels
 
         public static int GetResistanceSign(this Channel channel)
         {
-            double abs = Math.Abs(channel.ResistanceChannelRatio/channel.ResistanceStartPrice*200);
-            if (abs > 0.1)
+            double abs = Math.Abs(channel.ResistanceChannelRatio/channel.ResistanceStartPrice*channel.Length);
+            if (abs > channel.GetPercentageThreshold())
             {
                 if (channel.ResistanceChannelRatio > 0)
                     return 1;
@@ -144,10 +160,13 @@ namespace Market.Analyzer.Channels
                 breakIndex = 0;
                 return false;
             }
+
+            double high = orderedTransactions.Max(t => t.High);
+            double threshold = (high - orderedTransactions[n].Close) / 2;
             for (int i = n + 1; i < orderedTransactions.Count; i++)
             {
                 var supportPrice = channel.SupportStartPrice + channel.SupportChannelRatio * (channel.Length + i - n);
-                if (orderedTransactions[i].High < supportPrice)
+                if (orderedTransactions[i].Close < supportPrice - threshold)
                 {
                     breakIndex = i;
                     return true;
@@ -170,10 +189,12 @@ namespace Market.Analyzer.Channels
                 breakIndex = 0;
                 return false;
             }
+            double low = orderedTransactions.Where(t => t.TimeStamp >= channel.StartDate && t.TimeStamp <= channel.EndDate).Min(t => t.Low);
+            double threshold = (orderedTransactions[n].Close - low) / 2;
             for (int i = n + 1; i < orderedTransactions.Count; i++)
             {
                 var resistancePrice = channel.ResistanceStartPrice + channel.ResistanceChannelRatio * (channel.Length + i - n);
-                if (orderedTransactions[i].Low > resistancePrice)
+                if (orderedTransactions[i].Low > resistancePrice + threshold)
                 {
                     breakIndex = i;
                     return true;

@@ -22,14 +22,14 @@ namespace Market.TestFixture.Tasks
         public void AbleToGetTransactionDataFromInternet()
         {
             StockTask task = new StockTask();
-            Assert.AreEqual(HttpStatusCode.OK, task.GetTransactionDataFromInternet("ACD.TO"));
+            Assert.AreEqual(HttpStatusCode.OK, task.GetTransactionDataFromInternet("TD.TO"));
         }
 
         [TestMethod]
         public void AbleToGetDividendFromInternet()
         {
             StockTask task = new StockTask();
-            Assert.AreEqual(HttpStatusCode.OK, task.GetSplitFromInternet("ER.TO"));
+            Assert.AreEqual(HttpStatusCode.OK, task.GetSplitFromInternet("BBD-B.TO"));
         }
 
         [TestMethod]
@@ -53,7 +53,7 @@ namespace Market.TestFixture.Tasks
         {
             StockTask task = new StockTask();
             StockContext context = new StockContext();
-            //var stock = context.Stocks.First(s => s.Id == "CPG.TO");
+            //var stock = context.Stocks.First(s => s.Id == "BBD-B.TO");
             foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
                 try

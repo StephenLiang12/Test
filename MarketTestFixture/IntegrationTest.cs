@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Market.Analyzer;
@@ -9,12 +10,257 @@ using Market.Suggestions.MACD;
 using Market.Suggestions.TrendChannels;
 using Market.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting.Web;
 
 namespace Market.TestFixture
 {
     [TestClass]
     public class IntegrationTest
     {
+        static int[] GetSplitedStocks()
+        {
+            int[] stocks = new[]
+            {12,
+                26,
+                30,
+                31,
+                33,
+                52,
+                58,
+                60,
+                62,
+                64,
+                71,
+                72,
+                74,
+                79,
+                101,
+                105,
+                112,
+                129,
+                134,
+                137,
+                153,
+                154,
+                155,
+                161,
+                168,
+                169,
+                171,
+                174,
+                177,
+                179,
+                184,
+                186,
+                196,
+                199,
+                200,
+                209,
+                213,
+                217,
+                219,
+                222,
+                224,
+                226,
+                231,
+                237,
+                243,
+                255,
+                257,
+                265,
+                269,
+                275,
+                277,
+                280,
+                287,
+                289,
+                309,
+                333,
+                334,
+                335,
+                336,
+                337,
+                338,
+                340,
+                346,
+                356,
+                360,
+                361,
+                371,
+                372,
+                377,
+                386,
+                389,
+                393,
+                398,
+                405,
+                408,
+                409,
+                419,
+                423,
+                432,
+                437,
+                438,
+                442,
+                443,
+                446,
+                447,
+                448,
+                451,
+                456,
+                459,
+                465,
+                468,
+                472,
+                474,
+                475,
+                479,
+                482,
+                483,
+                487,
+                491,
+                494,
+                496,
+                500,
+                501,
+                503,
+                504,
+                506,
+                507,
+                512,
+                513,
+                518,
+                520,
+                534,
+                538,
+                539,
+                542,
+                550,
+                554,
+                556,
+                563,
+                564,
+                565,
+                572,
+                573,
+                579,
+                580,
+                581,
+                582,
+                583,
+                596,
+                607,
+                616,
+                636,
+                648,
+                651,
+                665,
+                675,
+                677,
+                693,
+                696,
+                701,
+                704,
+                706,
+                709,
+                715,
+                717,
+                719,
+                720,
+                721,
+                740,
+                752,
+                754,
+                757,
+                758,
+                778,
+                779,
+                780,
+                810,
+                813,
+                819,
+                820,
+                822,
+                835,
+                845,
+                858,
+                872,
+                873,
+                876,
+                877,
+                880,
+                891,
+                906,
+                917,
+                919,
+                923,
+                933,
+                935,
+                938,
+                940,
+                942,
+                946,
+                950,
+                956,
+                958,
+                967,
+                973,
+                975,
+                981,
+                982,
+                986,
+                987,
+                991,
+                1001,
+                1007,
+                1009,
+                1024,
+                1033,
+                1044,
+                1047,
+                1048,
+                1052,
+                1054,
+                1061,
+                1062,
+                1063,
+                1069,
+                1071,
+                1082,
+                1098,
+                1101,
+                1105,
+                1107,
+                1108,
+                1109,
+                1119,
+                1126,
+                1155,
+                1157,
+                1166,
+                1168,
+                1171,
+                1173,
+                1177,
+                1180,
+                1183,
+                1190,
+                1192,
+                1201,
+                1215,
+                1226,
+                1234,
+                1247,
+                1250,
+                1252,
+                1256,
+                1262,
+                1273,
+                1275
+            };
+            return stocks;
+        }
+
         [TestMethod]
         public void TestChannelReverse()
         {
@@ -98,16 +344,55 @@ namespace Market.TestFixture
             Console.WriteLine("Max Start Date: {0}, Min Start Date: {1}", maxStartTime, minStarTime);
         }
 
+        public void RecalculateSplits()
+        {
+            foreach (var splitedStock in GetSplitedStocks())
+            {
+                if (splitedStock < 419)
+                    continue;
+                Console.WriteLine("Working on stock {0}", splitedStock);
+                StockContext context = new StockContext();
+                StockTask stockTask = new StockTask();
+                var transactionData = context.TransactionData.Where(t => t.StockKey == splitedStock).ToList();
+                context.TransactionData.RemoveRange(transactionData);
+                var splits = context.Splits.Where(t => t.StockKey == splitedStock).ToList();
+                context.Splits.RemoveRange(splits);
+                context.SaveChanges();
+                var stock = context.Stocks.First(s => s.Key == splitedStock);
+                stockTask.GetSplitFromInternet(stock.Id);
+                stockTask.RegenerateTransactionDataFromOriginalData(splitedStock);
+            }
+
+            Console.ReadLine();
+        }
         [TestMethod]
         public void RerunFromBeginning()
         {
-            StockContext context = new StockContext();
-            MACDSuggestionAnalyzer analyzer = new MACDSuggestionAnalyzer();
-            StockTask stockTask = new StockTask();
+            MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
+            TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
+            TrendChannelTriangleBreakSuggestionAnalyzer trendChannelTriangleBreakSuggestionAnalyzer = new TrendChannelTriangleBreakSuggestionAnalyzer();
+            IList<ISuggestionAnalyzer> analyzers = new List<ISuggestionAnalyzer>();
+            analyzers.Add(macdSuggestionAnalyzer);
+            analyzers.Add(trendChannelBreakSuggestionAnalyzer);
+            analyzers.Add(trendChannelTriangleBreakSuggestionAnalyzer);
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            IList<int> list = new List<int>(new []{96});
-            foreach (var stock in context.Stocks.Where(s => list.Contains(s.Key)))
+            IList<int> list = GetSplitedStocks().ToList();
+            foreach (var key in list)
             {
+                //Work on key from 1000
+                if (key < 1000)
+                    continue;
+                Console.WriteLine("Working on stock {0}", key);
+                StockContext context = new StockContext();
+                StockTask stockTask = new StockTask();
+                var analyses = context.MovingAverageConvergenceDivergenceAnalyses.Where(m => m.StockKey == key);
+                context.MovingAverageConvergenceDivergenceAnalyses.RemoveRange(analyses);
+                var channels = context.Channels.Where(c => c.StockKey == key);
+                context.Channels.RemoveRange(channels);
+                var suggestions = context.Suggestions.Where(s => s.StockKey == key);
+                context.Suggestions.RemoveRange(suggestions);
+                context.SaveChanges();
+                var stock = context.Stocks.First(s => s.Key == key);
                 stockTask.CalculateMovingAverageConvergenceDivergence(stock.Key);
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
@@ -117,46 +402,51 @@ namespace Market.TestFixture
                     try
                     {
                         var partialList = orderedList.GetFrontPartial(j);
-                        if (analyzer.CalculateForecaseCertainty(partialList) > 0)
+                        foreach (var analyzer in analyzers)
                         {
-                            Suggestion suggestion = new Suggestion();
-                            suggestion.TimeStamp = orderedList[j - 1].TimeStamp;
-                            suggestion.StockKey = stock.Key;
-                            suggestion.StockId = stock.Id;
-                            suggestion.StockName = stock.Name;
-                            suggestion.ClosePrice = orderedList[j - 1].Close;
-                            suggestion.Volume = orderedList[j - 1].Volume;
-                            suggestion.CandleStickPattern = "Unknown";
-                            //suggestion.CandleStickPattern = partialPattern.Name;
-                            //suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
-                            //suggestion.Avg5Trend = partialMovingTrend5;
-                            //suggestion.Avg20Trend = movingTrend20;
-                            //suggestion.Avg200Trend = movingTrend200;
-                            //suggestion.PriceVsAvg5 = priceMovingAvg5;
-                            //suggestion.PriceVsAvg200 = priceMovingAvg200;
-                            //suggestion.Avg5VsAvg20 = movingAvg5_20;
-                            //suggestion.Avg50VsAvg200 = movingAvg50_200;
-                            suggestion.AnalyzerName = analyzer.Name;
-                            suggestion.SuggestedTerm = analyzer.Term;
-                            suggestion.SuggestedAction = analyzer.Action;
-                            if (context.Suggestions.Any(
-                                    s =>
-                                        s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
-                                        s.AnalyzerName == suggestion.AnalyzerName &&
-                                        s.SuggestedAction == suggestion.SuggestedAction &&
-                                        s.SuggestedTerm == suggestion.SuggestedTerm) == false)
+                            if (analyzer.CalculateForecaseCertainty(partialList) > 0)
                             {
-                                StockContext saveContext = new StockContext();
-                                saveContext.Suggestions.Add(suggestion);
-                                saveContext.SaveChanges();
+                                Suggestion suggestion = new Suggestion();
+                                suggestion.TimeStamp = orderedList[j - 1].TimeStamp;
+                                suggestion.StockKey = stock.Key;
+                                suggestion.StockId = stock.Id;
+                                suggestion.StockName = stock.Name;
+                                suggestion.ClosePrice = orderedList[j - 1].Close;
+                                suggestion.Volume = orderedList[j - 1].Volume;
+                                suggestion.CandleStickPattern = "Unknown";
+                                //suggestion.CandleStickPattern = partialPattern.Name;
+                                //suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
+                                //suggestion.Avg5Trend = partialMovingTrend5;
+                                //suggestion.Avg20Trend = movingTrend20;
+                                //suggestion.Avg200Trend = movingTrend200;
+                                //suggestion.PriceVsAvg5 = priceMovingAvg5;
+                                //suggestion.PriceVsAvg200 = priceMovingAvg200;
+                                //suggestion.Avg5VsAvg20 = movingAvg5_20;
+                                //suggestion.Avg50VsAvg200 = movingAvg50_200;
+                                suggestion.AnalyzerName = analyzer.Name;
+                                suggestion.SuggestedTerm = analyzer.Term;
+                                suggestion.SuggestedAction = analyzer.Action;
+                                suggestion.Pattern = analyzer.Pattern;
+                                if (context.Suggestions.Any(
+                                        s =>
+                                            s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
+                                            s.AnalyzerName == suggestion.AnalyzerName &&
+                                            s.SuggestedAction == suggestion.SuggestedAction &&
+                                            s.SuggestedTerm == suggestion.SuggestedTerm) == false)
+                                {
+                                    StockContext saveContext = new StockContext();
+                                    saveContext.Suggestions.Add(suggestion);
+                                    saveContext.SaveChanges();
+                                }
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.StackTrace);
-                        throw;
+                        //throw;
                     }
+
                     j++;
                 }
             }
@@ -757,12 +1047,14 @@ namespace Market.TestFixture
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
             TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
+            TrendChannelTriangleBreakSuggestionAnalyzer trendChannelTriangleBreakSuggestionAnalyzer = new TrendChannelTriangleBreakSuggestionAnalyzer();
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             IList<ISuggestionAnalyzer> analyzers = new List<ISuggestionAnalyzer>();
             //analyzers.Add(new ShortTermSecondBounceAfterLongTermDownSuggestionAnalyzer());
             //analyzers.Add(new LongTermBuyAfterLongTermPrepareSuggestionAnalyzer());
             analyzers.Add(macdSuggestionAnalyzer);
             analyzers.Add(trendChannelBreakSuggestionAnalyzer);
+            analyzers.Add(trendChannelTriangleBreakSuggestionAnalyzer);
 
             foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
@@ -1186,10 +1478,17 @@ namespace Market.TestFixture
             StockContext context = new StockContext();
             var suggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
             var transactionData =
-                context.TransactionData.Where(t => t.StockKey == 96 && t.TimeStamp <= new DateTime(2018, 4, 13) && t.TimeStamp >= new DateTime(2017, 4, 6))
+                context.TransactionData.Where(t => t.StockKey == 1073 && t.TimeStamp <= new DateTime(2018, 8, 20) && t.TimeStamp >= new DateTime(2017, 8, 1))
                     .OrderBy(t => t.TimeStamp)
                     .ToList();
-            var result = suggestionAnalyzer.CalculateForecaseCertainty(transactionData);
+            int count = transactionData.Count;
+            for (int i = 10; i >= 0; i--)
+            {
+                var partialTransactionData = transactionData.GetFrontPartial(count - i);
+                var result = suggestionAnalyzer.CalculateForecaseCertainty(partialTransactionData);
+                if (result > 0)
+                    Console.WriteLine(partialTransactionData[partialTransactionData.Count - 1].TimeStamp);
+            }
         }
 
         [TestMethod]
@@ -1199,14 +1498,14 @@ namespace Market.TestFixture
             MovingAverageAnalyzer analyzer = new MovingAverageAnalyzer();
             CandleStickPatternAnalyzer candleStickPatternAnalyzer = new CandleStickPatternAnalyzer();
             IList<ISuggestionAnalyzer> suggestionAnalyzers = new List<ISuggestionAnalyzer>();
-            //MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
+            MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
             TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
+            suggestionAnalyzers.Add(macdSuggestionAnalyzer);
             suggestionAnalyzers.Add(trendChannelBreakSuggestionAnalyzer);
-            //suggestionAnalyzers.Add(trendChannelBreakSuggestionAnalyzer);
             Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
             foreach (var stock in context.Stocks.ToList())
             {
-                if (stock.Key != 96)
+                if (stock.Key != 1345)
                     continue;
                 IList<TransactionData> orderedList =
                     context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();

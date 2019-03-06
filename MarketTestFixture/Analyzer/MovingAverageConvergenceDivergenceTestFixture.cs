@@ -186,11 +186,12 @@ namespace Market.TestFixture.Analyzer
         [TestMethod]
         public void Test()
         {
-            int stockKey = 96;
+            int stockKey = 69;
             StockContext context = new StockContext();
-            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= new DateTime(2017, 3, 1) && m.TimeStamp <= new DateTime(2017, 9, 15)).OrderBy(m => m.TimeStamp).ToList();
+            var list = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey && m.TimeStamp >= new DateTime(2017, 3, 1) && m.TimeStamp <= new DateTime(2018, 6, 12)).OrderBy(m => m.TimeStamp).ToList();
             MovingAverageConvergenceDivergencePatternAnalyzer analyzer = new MovingAverageConvergenceDivergencePatternAnalyzer();
-            Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.Peak, analyzer.Analyze(list));
+            var feature = analyzer.Analyze(list);
+            Assert.AreEqual(MovingAverageConvergenceDivergenceFeature.Peak, feature);
         }
     }
 }

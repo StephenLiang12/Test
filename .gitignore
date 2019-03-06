@@ -87,3 +87,7 @@ Temporary Items
 /DailyRoutine Backup
 /Rerun
 /Suggestion.xlsx
+/.vs
+/Market/obj/Release
+/MarketPresentation/obj/Release
+/MarketTestFixture/obj/Release

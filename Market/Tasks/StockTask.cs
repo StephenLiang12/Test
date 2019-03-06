@@ -241,18 +241,27 @@ namespace Market.Tasks
                 throw new ArgumentException("Unknow Stock Id {0}", stockId);
             }
             var stock = context.Stocks.First(s => s.Id == stockId);
+            int count = 0;
             foreach (var split in webRequest.GetSplitFromInternet())
             {
                 split.StockKey = stock.Key;
                 DateTime splitTimeStamp = split.TimeStamp;
-                if (context.Splits.Any(s => s.StockKey == stock.Key && s.TimeStamp == splitTimeStamp))
+                if (split.SplitRatio == Double.PositiveInfinity || context.Splits.Any(s => s.StockKey == stock.Key && s.TimeStamp == splitTimeStamp))
                     continue;
                 context.Splits.Add(split);
                 ApplySplitOnTransactionData(stock.Key, split);
+                ApplySplitOnChannels(stock.Key, split);
                 split.Applied = true;
+                count++;
             }
             context.SaveChanges();
-            return 0;
+            return count;
+        }
+
+        public Channel GetChannel(int stockKey, int length, DateTime endTime)
+        {
+            var stockContext = new StockContext();
+            return stockContext.Channels.FirstOrDefault(c => c.StockKey == stockKey && c.Length == length && c.EndDate == endTime);
         }
 
         private void ApplySplitOnTransactionData(int stockKey, Split split)
@@ -261,10 +270,22 @@ namespace Market.Tasks
             foreach (
                 var transaction in context.TransactionData.Where(t => t.StockKey == stockKey && t.TimeStamp < split.TimeStamp))
             {
-                transaction.Open /= split.SplitRatio;
-                transaction.Close /= split.SplitRatio;
-                transaction.High /= split.SplitRatio;
-                transaction.Low /= split.SplitRatio;
+                transaction.Open *= split.SplitRatio;
+                transaction.Close *= split.SplitRatio;
+                transaction.High *= split.SplitRatio;
+                transaction.Low *= split.SplitRatio;
+            }
+            context.SaveChanges();
+        }
+
+        private void ApplySplitOnChannels(int stockKey, Split split)
+        {
+            var context = new StockContext();
+            foreach (
+                var channel in context.Channels.Where(t => t.StockKey == stockKey && t.EndDate < split.TimeStamp))
+            {
+                channel.SupportStartPrice *= split.SplitRatio;
+                channel.ResistanceStartPrice *= split.SplitRatio;
             }
             context.SaveChanges();
         }
@@ -298,6 +319,13 @@ namespace Market.Tasks
                 return channels.First(c => c.EndDate == maxDate);
             }
             return null;
+        }
+
+        public IEnumerable<Channel> GetChannels(int stockKey, int length, DateTime startTime, DateTime endTime)
+        {
+            var stockContext = new StockContext();
+            var channels = stockContext.Channels.Where(c => c.StockKey == stockKey && c.Length == length && c.EndDate>= startTime && c.EndDate < endTime).ToList();
+            return channels;
         }
     }
 }

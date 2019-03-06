@@ -89,6 +89,8 @@
     <Compile Include="StockContextTestFixture.cs" />
     <Compile Include="Suggestions\LongTermBuyAfterLongTermPrepareSuggestionAnalyzerTestFixture.cs" />
     <Compile Include="Suggestions\ShortTermSecondBottomTouchAfterLongDownSuggestionAnalyzerTestFixture.cs" />
+    <Compile Include="Suggestions\TrendChannelBreakSuggestionAnalyzerTestFixture.cs" />
+    <Compile Include="Suggestions\TrendChannelTriangleBreakSuggestionAnalyzerTestFixture.cs" />
     <Compile Include="Tasks\StockTaskTestFixture.cs" />
     <Compile Include="Web\GoogleFinanceTransactionWebRequestTestFixture.cs" />
     <Compile Include="Web\YahooFinanceIChartTransactionWebRequestTestFixture.cs" />
