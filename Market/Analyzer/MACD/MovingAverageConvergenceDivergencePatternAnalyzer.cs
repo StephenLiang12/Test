@@ -100,6 +100,16 @@ namespace Market.Analyzer.MACD
                     return MovingAverageConvergenceDivergenceFeature.RetrieveFromZero;
                 }
             }
+
+            if ((array[array.Length - 2].Histogram < 0 || array[array.Length - 2].MACD < 0 ||
+                 array[array.Length - 2].Signal < 0) && array[array.Length - 1].Histogram > 0 &&
+                array[array.Length - 1].MACD > 0 && array[array.Length - 1].Signal > 0)
+                return MovingAverageConvergenceDivergenceFeature.AllAboveZero;
+
+            if ((array[array.Length - 2].Histogram > 0 || array[array.Length - 2].MACD > 0 ||
+                 array[array.Length - 2].Signal > 0) && array[array.Length - 1].Histogram < 0 &&
+                array[array.Length - 1].MACD < 0 && array[array.Length - 1].Signal < 0)
+                return MovingAverageConvergenceDivergenceFeature.AllBelowZero;
             return MovingAverageConvergenceDivergenceFeature.Unkown;
         }
 
