@@ -40,20 +40,33 @@ where SellDate is not null
 group by TS.stockKey
 order by 2
 
-select StockKey, TimeStamp, StockId, StockName, Volume, ClosePrice, SuggestedAction, SuggestedTerm, AnalyzerName, Pattern from Suggestion
-where TimeStamp = '2019-01-02'
+select S.StockKey, S.TimeStamp, StockId, StockName, Volume, ClosePrice, SuggestedAction, SuggestedTerm, AnalyzerName, Pattern 
+from Suggestion S
+inner join MovingAverageConvergenceDivergence M on S.StockKey = M.StockKey and S.TimeStamp = M.TimeStamp
+where S.TimeStamp = '2019-03-15'
   and volume > 100000
+  and M.MACD > 0
+  and M.Signal > 0
   and SuggestedAction = 1
 order by StockId
 
 select StockKey, TimeStamp, StockId, StockName, Volume, ClosePrice, SuggestedAction, SuggestedTerm, AnalyzerName, Pattern from Suggestion
-where StockId LIKE 'HOD%'
+where StockId LIKE 'HOU%'
 order by TimeStamp desc
 
 select * from MovingAverageConvergenceDivergence
-where StockKey = 11
+where StockKey = 479
 order by TimeStamp desc
 
 select * from TransactionData
-where StockKey = 477
+where StockKey = 487
 order by TimeStamp desc
+
+select * from Stock
+where id like 'ATP%'
+
+select * from split
+where Applied is null or Applied = 0
+
+select * from OriginalTransactionData
+where TimeStamp = '2019-03-15'

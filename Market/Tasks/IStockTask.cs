@@ -13,5 +13,6 @@ namespace Market.Tasks
         Channel GetChannel(int stockKey, int length, DateTime startTime, DateTime endTime);
         Channel GetPreviousChannel(int stockKey, int length, DateTime endTime);
         IEnumerable<Channel> GetChannels(int stockKey, int length, DateTime startTime, DateTime endTime);
+        void ApplySplitOnTransactionData(int stockKey, Split split);
     }
 }

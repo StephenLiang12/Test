@@ -249,9 +249,6 @@ namespace Market.Tasks
                 if (split.SplitRatio == Double.PositiveInfinity || context.Splits.Any(s => s.StockKey == stock.Key && s.TimeStamp == splitTimeStamp))
                     continue;
                 context.Splits.Add(split);
-                ApplySplitOnTransactionData(stock.Key, split);
-                ApplySplitOnChannels(stock.Key, split);
-                split.Applied = true;
                 count++;
             }
             context.SaveChanges();
@@ -264,7 +261,7 @@ namespace Market.Tasks
             return stockContext.Channels.FirstOrDefault(c => c.StockKey == stockKey && c.Length == length && c.EndDate == endTime);
         }
 
-        private void ApplySplitOnTransactionData(int stockKey, Split split)
+        public void ApplySplitOnTransactionData(int stockKey, Split split)
         {
             var context = new StockContext();
             foreach (

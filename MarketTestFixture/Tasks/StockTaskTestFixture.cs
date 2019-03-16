@@ -82,7 +82,16 @@ namespace Market.TestFixture.Tasks
             foreach (var stock in context.Stocks.Where(s => s.Key >= Properties.Settings.Default.MinStockKey && s.Key <= Properties.Settings.Default.MaxStockKey).ToList())
             {
                 if (stock.AbleToGetTransactionDataFromWeb)
-                    task.GetSplitFromInternet(stock.Id);
+                {
+                    try
+                    {
+                        task.GetSplitFromInternet(stock.Id);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Get split for {0} error {1}", stock.Id, e.Message);
+                    }
+                }
             }
         }
 

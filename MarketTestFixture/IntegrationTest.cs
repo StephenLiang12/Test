@@ -365,90 +365,110 @@ namespace Market.TestFixture
 
             Console.ReadLine();
         }
+
+        public void RerunFromBeginningOnSplittedStocks()
+        {
+            StockContext context = new StockContext();
+            StockTask stockTask = new StockTask();
+            foreach (var split in context.Splits.Where(s => s.Applied == false))
+            {
+                stockTask.ApplySplitOnTransactionData(split.StockKey, split);
+                RerunFromBeginning(split.StockKey);
+                split.Applied = true;
+            }
+
+            context.SaveChanges();
+        }
+
         [TestMethod]
         public void RerunFromBeginning()
         {
+            IList<int> list = new[] {487};//GetSplitedStocks().ToList();
+            foreach (var key in list)
+            {
+                RerunFromBeginning(key);
+            }
+        }
+
+        public void RerunFromBeginning(int stockKey)
+        {
             MACDSuggestionAnalyzer macdSuggestionAnalyzer = new MACDSuggestionAnalyzer();
-            TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer = new TrendChannelBreakSuggestionAnalyzer();
-            TrendChannelTriangleBreakSuggestionAnalyzer trendChannelTriangleBreakSuggestionAnalyzer = new TrendChannelTriangleBreakSuggestionAnalyzer();
+            TrendChannelBreakSuggestionAnalyzer trendChannelBreakSuggestionAnalyzer =
+                new TrendChannelBreakSuggestionAnalyzer();
+            TrendChannelTriangleBreakSuggestionAnalyzer trendChannelTriangleBreakSuggestionAnalyzer =
+                new TrendChannelTriangleBreakSuggestionAnalyzer();
             IList<ISuggestionAnalyzer> analyzers = new List<ISuggestionAnalyzer>();
             analyzers.Add(macdSuggestionAnalyzer);
             analyzers.Add(trendChannelBreakSuggestionAnalyzer);
             analyzers.Add(trendChannelTriangleBreakSuggestionAnalyzer);
-            Console.WriteLine("Id, Name, DateTime, Action, Close, CandleStickPattern, MACD, Avg20 Trend, Avg200 Trend, Price VS Avg5,Avg5 VS Avg20");
-            IList<int> list = GetSplitedStocks().ToList();
-            foreach (var key in list)
+            Console.WriteLine("Rerun from beginning on stock {0}", stockKey);
+            StockContext context = new StockContext();
+            StockTask stockTask = new StockTask();
+            var macds = context.MovingAverageConvergenceDivergences.Where(m => m.StockKey == stockKey);
+            context.MovingAverageConvergenceDivergences.RemoveRange(macds);
+            var analyses = context.MovingAverageConvergenceDivergenceAnalyses.Where(m => m.StockKey == stockKey);
+            context.MovingAverageConvergenceDivergenceAnalyses.RemoveRange(analyses);
+            var channels = context.Channels.Where(c => c.StockKey == stockKey);
+            context.Channels.RemoveRange(channels);
+            var suggestions = context.Suggestions.Where(s => s.StockKey == stockKey);
+            context.Suggestions.RemoveRange(suggestions);
+            context.SaveChanges();
+            var stock = context.Stocks.First(s => s.Key == stockKey);
+            stockTask.CalculateMovingAverageConvergenceDivergence(stock.Key);
+            IList<TransactionData> orderedList =
+                context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
+            int j = 200;
+            while (j < orderedList.Count)
             {
-                //Work on key from 1000
-                if (key < 1000)
-                    continue;
-                Console.WriteLine("Working on stock {0}", key);
-                StockContext context = new StockContext();
-                StockTask stockTask = new StockTask();
-                var analyses = context.MovingAverageConvergenceDivergenceAnalyses.Where(m => m.StockKey == key);
-                context.MovingAverageConvergenceDivergenceAnalyses.RemoveRange(analyses);
-                var channels = context.Channels.Where(c => c.StockKey == key);
-                context.Channels.RemoveRange(channels);
-                var suggestions = context.Suggestions.Where(s => s.StockKey == key);
-                context.Suggestions.RemoveRange(suggestions);
-                context.SaveChanges();
-                var stock = context.Stocks.First(s => s.Key == key);
-                stockTask.CalculateMovingAverageConvergenceDivergence(stock.Key);
-                IList<TransactionData> orderedList =
-                    context.TransactionData.Where(t => t.StockKey == stock.Key).OrderBy(t => t.TimeStamp).ToList();
-                int j = 200;
-                while (j < orderedList.Count)
+                try
                 {
-                    try
+                    var partialList = orderedList.GetFrontPartial(j);
+                    foreach (var analyzer in analyzers)
                     {
-                        var partialList = orderedList.GetFrontPartial(j);
-                        foreach (var analyzer in analyzers)
+                        if (analyzer.CalculateForecaseCertainty(partialList) > 0)
                         {
-                            if (analyzer.CalculateForecaseCertainty(partialList) > 0)
+                            Suggestion suggestion = new Suggestion();
+                            suggestion.TimeStamp = orderedList[j - 1].TimeStamp;
+                            suggestion.StockKey = stock.Key;
+                            suggestion.StockId = stock.Id;
+                            suggestion.StockName = stock.Name;
+                            suggestion.ClosePrice = orderedList[j - 1].Close;
+                            suggestion.Volume = orderedList[j - 1].Volume;
+                            suggestion.CandleStickPattern = "Unknown";
+                            //suggestion.CandleStickPattern = partialPattern.Name;
+                            //suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
+                            //suggestion.Avg5Trend = partialMovingTrend5;
+                            //suggestion.Avg20Trend = movingTrend20;
+                            //suggestion.Avg200Trend = movingTrend200;
+                            //suggestion.PriceVsAvg5 = priceMovingAvg5;
+                            //suggestion.PriceVsAvg200 = priceMovingAvg200;
+                            //suggestion.Avg5VsAvg20 = movingAvg5_20;
+                            //suggestion.Avg50VsAvg200 = movingAvg50_200;
+                            suggestion.AnalyzerName = analyzer.Name;
+                            suggestion.SuggestedTerm = analyzer.Term;
+                            suggestion.SuggestedAction = analyzer.Action;
+                            suggestion.Pattern = analyzer.Pattern;
+                            if (context.Suggestions.Any(
+                                    s =>
+                                        s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
+                                        s.AnalyzerName == suggestion.AnalyzerName &&
+                                        s.SuggestedAction == suggestion.SuggestedAction &&
+                                        s.SuggestedTerm == suggestion.SuggestedTerm) == false)
                             {
-                                Suggestion suggestion = new Suggestion();
-                                suggestion.TimeStamp = orderedList[j - 1].TimeStamp;
-                                suggestion.StockKey = stock.Key;
-                                suggestion.StockId = stock.Id;
-                                suggestion.StockName = stock.Name;
-                                suggestion.ClosePrice = orderedList[j - 1].Close;
-                                suggestion.Volume = orderedList[j - 1].Volume;
-                                suggestion.CandleStickPattern = "Unknown";
-                                //suggestion.CandleStickPattern = partialPattern.Name;
-                                //suggestion.Macd = signalLineCrossOver10_20_6.Divergence;
-                                //suggestion.Avg5Trend = partialMovingTrend5;
-                                //suggestion.Avg20Trend = movingTrend20;
-                                //suggestion.Avg200Trend = movingTrend200;
-                                //suggestion.PriceVsAvg5 = priceMovingAvg5;
-                                //suggestion.PriceVsAvg200 = priceMovingAvg200;
-                                //suggestion.Avg5VsAvg20 = movingAvg5_20;
-                                //suggestion.Avg50VsAvg200 = movingAvg50_200;
-                                suggestion.AnalyzerName = analyzer.Name;
-                                suggestion.SuggestedTerm = analyzer.Term;
-                                suggestion.SuggestedAction = analyzer.Action;
-                                suggestion.Pattern = analyzer.Pattern;
-                                if (context.Suggestions.Any(
-                                        s =>
-                                            s.StockKey == suggestion.StockKey && s.TimeStamp == suggestion.TimeStamp &&
-                                            s.AnalyzerName == suggestion.AnalyzerName &&
-                                            s.SuggestedAction == suggestion.SuggestedAction &&
-                                            s.SuggestedTerm == suggestion.SuggestedTerm) == false)
-                                {
-                                    StockContext saveContext = new StockContext();
-                                    saveContext.Suggestions.Add(suggestion);
-                                    saveContext.SaveChanges();
-                                }
+                                StockContext saveContext = new StockContext();
+                                saveContext.Suggestions.Add(suggestion);
+                                saveContext.SaveChanges();
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.StackTrace);
-                        //throw;
-                    }
-
-                    j++;
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                    //throw;
+                }
+
+                j++;
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Market.Tasks;
 using Market.TestFixture.Tasks;
 
@@ -26,7 +27,7 @@ namespace Market.TestFixture
             IntegrationTest test = new IntegrationTest();
             //Console.WriteLine("Rerun Analyzer from {0} to {1}", Properties.Settings.Default.MinStockKey,
             //    Properties.Settings.Default.MaxStockKey);
-            test.RunMovingAverageConvergenceDivergenceFeatureAnalysis();
+            test.RerunFromBeginning();
             Console.WriteLine("Completed");
             Console.ReadLine();
         }
@@ -37,6 +38,7 @@ namespace Market.TestFixture
             StockTaskTestFixture stockTaskTest = new StockTaskTestFixture();
             stockTaskTest.AbleToGetAllTmxTransactionDataFromInternet();
             Console.WriteLine("Got all Transaction data from Internet");
+            //Thread.Sleep(5000);
             stockTaskTest.AbleToGetSplitFromInternet();
             Console.WriteLine("Got all Split from Internet");
             task.CalculateMovingAverageConvergenceDivergence(Properties.Settings.Default.MinStockKey,
@@ -46,6 +48,7 @@ namespace Market.TestFixture
             //Console.WriteLine("Analyzed Channel");
             //Console.ReadLine();
             IntegrationTest integrationTest = new IntegrationTest();
+            integrationTest.RerunFromBeginningOnSplittedStocks();
             integrationTest.GetLatestSuggestions();
             Console.WriteLine("Generate latest Suggestions");
             Console.ReadLine();
